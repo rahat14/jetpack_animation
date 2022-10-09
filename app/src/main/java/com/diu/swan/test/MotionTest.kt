@@ -1,6 +1,5 @@
 package com.diu.swan.test
 
-
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -10,14 +9,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -25,9 +24,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.diu.swan.test.ui.theme.TestTheme
 
 
@@ -46,66 +48,168 @@ class MotionTest : ComponentActivity() {
                     val configuration = LocalConfiguration.current
 
                     val screenHeight = configuration.screenHeightDp.dp
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(Color.White),
-                        horizontalAlignment = Alignment.CenterHorizontally
 
+                        contentAlignment = Alignment.BottomCenter
 
                     ) {
 
 
-                        LoadData(animationState , points)
-                        Spacer(modifier = Modifier.height(30.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            Text(text = "Points - ${points.value} ", color = Color.Black)
-                            Spacer(Modifier.weight(0.3f))
-                            Button(onClick = {
-                                if(points.value  != 60){
-                                    animationState.value = !animationState.value
-                                }
-
-                            }) {
-                                Text(text = "Jump")
-                            }
-                            Spacer(Modifier.weight(0.8f))
-                        }
+                        LoadData(animationState, points)
+                        QustionCard(animationState)
 
 
-//                        Row(
+//                        Spacer(modifier = Modifier.height(30.dp))
 //
+//                        Row(modifier = Modifier.fillMaxWidth(),
 //                            horizontalArrangement = Arrangement.Center,
-//                            verticalAlignment = Alignment.CenterVertically ,
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .background(Color.Black),
-//
+//                            verticalAlignment = Alignment.CenterVertically
 //                        ) {
 //
-//                            Spacer(modifier = Modifier.height(20.dp))
+//                            Text(text = "Points - ${points.value} ", color = Color.Black)
+//                            Spacer(Modifier.weight(0.3f))
+//                            Button(onClick = {
+//                                if(points.value  != 60){
+//                                    animationState.value = !animationState.value
+//                                }
 //
-//                            ComposeCircularProgressBar(
-//                                modifier = Modifier.size(220.dp),
-//                                percentage = 1.0f,
-//                                fillColor = Color(android.graphics.Color.parseColor("#4DB6AC")),
-//                                backgroundColor = Color(android.graphics.Color.parseColor("#90A4AE")),
-//                                strokeWidth = 10.dp
-//                            )
-//
-//                            Spacer(modifier = Modifier.height(20.dp))
+//                            }) {
+//                                Text(text = "Jump")
+//                            }
+//                            Spacer(Modifier.weight(0.8f))
 //                        }
+
+
                     }
                 }
             }
         }
     }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QustionCard(animationState: MutableState<Boolean>) {
+    Card(
+
+        modifier = Modifier
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
+
+        containerColor = Color(0x856808FF),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        contentColor = Color(0x856808FF),
+
+        ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 18.dp)
+        ) {
+            Text(
+                "This is a question of the game ? ",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
+                    .background(color = Color.White)
+                    .padding(vertical = 8.dp)
+                    .clickable {
+
+                        animationState.value = !animationState.value
+
+                    },
+                textAlign = TextAlign.Center,
+                fontSize = 16.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(
+                    "Option 1 ",
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .weight(1.0f)
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
+                        .background(color = Color.Magenta)
+                        .padding(vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+
+
+                Text(
+                    "Option 2 ",
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .weight(1.0f)
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
+                        .background(color = Color.Magenta)
+                        .padding(vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(
+                    "Option 3 ",
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .weight(1.0f)
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
+                        .background(color = Color.Magenta)
+                        .padding(vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+
+
+                Text(
+                    "Option 4 ",
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .weight(1.0f)
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
+                        .background(color = Color.Magenta)
+                        .padding(vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
 
 fun getPixelFromDP(density: Density, pixl: Int) {
     return density.run { pixl.dp.toPx() }
@@ -125,14 +229,14 @@ fun LoadData(
         mutableStateOf(0)
     }
     var JumpedPlatfrom by remember {
-        mutableStateOf(7)
+        mutableStateOf(6)
     }
     // initial location of the jump the user is in.
 
     val LD = LocalDensity.current
     val infiniteTransition = rememberInfiniteTransition()
     val index = remember {
-        mutableStateOf(6)
+        mutableStateOf(5)
     }
     val option = BitmapFactory.Options()
     option.apply {
@@ -159,6 +263,14 @@ fun LoadData(
         option
     )
 
+
+    val test_image = BitmapFactory.decodeResource(
+        LocalContext.current.resources,
+        R.drawable.rocket1,
+        option
+    )
+
+
     val man_image = BitmapFactory.decodeResource(
         LocalContext.current.resources,
         R.drawable.man,
@@ -172,7 +284,7 @@ fun LoadData(
     val man_width = LD.run { 50.dp.toPx() }
     val man_height = LD.run { 100.dp.toPx() }
 
-    val coins_width = LD.run { 30.dp.toPx() }  * scale
+    val coins_width = LD.run { 30.dp.toPx() } * scale
     val coins_height = LD.run { 30.dp.toPx() }
 
     val imageBitmap = Bitmap.createScaledBitmap(
@@ -185,6 +297,11 @@ fun LoadData(
         man_width.toInt(), man_height.toInt(), true
     ).asImageBitmap()
 
+    val testBitmap = Bitmap.createScaledBitmap(
+        test_image,
+        man_width.toInt(), man_height.toInt(), true
+
+    ).asImageBitmap()
 
     val CoinBitmap = Bitmap.createScaledBitmap(
         coins_image,
@@ -237,8 +354,9 @@ fun LoadData(
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(screenHeight - 100.dp)
-            .padding(10.dp),
+            .height(screenHeight)
+            .padding(10.dp)
+            .padding(bottom = 50.dp),
     ) {
         invalidations.let { inv ->
             //Draw Composables
@@ -256,12 +374,12 @@ fun LoadData(
                 if (i != 0) {
 
                     if (isLeft) {
-                        drawLine(
-                            start = Offset(x = 100f, y = i.toFloat()),
-                            end = Offset(x = 220f, y = i.toFloat()),
-                            color = Color.Blue,
-                            strokeWidth = 10.0F
-                        )
+//                        drawLine(
+//                            start = Offset(x = 100f, y = i.toFloat()),
+//                            end = Offset(x = 220f, y = i.toFloat()),
+//                            color = Color.Blue,
+//                            strokeWidth = 10.0F
+//                        )
 
                         drawImage(
                             image = imageBitmap,
@@ -276,12 +394,12 @@ fun LoadData(
 
                     } else {
 
-                        drawLine(
-                            start = Offset(x = canvasWidth - 220, y = i.toFloat()),
-                            end = Offset(x = canvasWidth - 100, y = i.toFloat()),
-                            color = Color.Blue,
-                            strokeWidth = 10.0F
-                        )
+//                        drawLine(
+//                            start = Offset(x = canvasWidth - 220, y = i.toFloat()),
+//                            end = Offset(x = canvasWidth - 100, y = i.toFloat()),
+//                            color = Color.Blue,
+//                            strokeWidth = 10.0F
+//                        )
 
                         drawImage(
                             image = imageBitmap,
@@ -304,14 +422,17 @@ fun LoadData(
 
             var step = 0
             isLeft = false
+            /*
+             render coin
+             */
+
             for (i in 0..canvasHeight.toInt() step (canvasHeight / 7).toInt()) {
 
                 Log.d("PRINT", "LoadData: $JumpedPlatfrom")
 
-                if (step in 1..6 && step < JumpedPlatfrom) {
+                if (step in 1..5 && step < JumpedPlatfrom) {
 
                     if (isLeft) {
-
 
 
                         drawImage(
@@ -325,7 +446,7 @@ fun LoadData(
                         )
 
 
-                        listOfOffset.add(Offset(x = 160f, y = i.toFloat()))
+                      //  listOfOffset.add(Offset(x = 160f, y = i.toFloat()))
 
                     } else {
 
@@ -336,12 +457,12 @@ fun LoadData(
                                 x = canvasWidth - (coins_width / 2) - (220 - 60),
                                 y = i.toFloat() - (coins_height)
                             ),
-                            alpha = scale ,
+                            alpha = scale,
 
-                        )
+                            )
 
 
-                        listOfOffset.add(Offset(x = canvasWidth - (220 - 60), y = i.toFloat()))
+                     //   listOfOffset.add(Offset(x = canvasWidth - (220 - 60), y = i.toFloat()))
                         Log.d("TAG", "LoadData: ${canvasWidth - 220} , ${i.toFloat()}")
                     }
 
@@ -365,7 +486,6 @@ fun LoadData(
             var x = 0f
             var y = 0f
 
-            val density_30 = LD.run { 15.dp.toPx() }
             val jumpOff = LD.run { 21.dp.toPx() }
 
 
@@ -377,8 +497,8 @@ fun LoadData(
                 x = p1.x    //+ density_30
                 y = p1.y    //- density_30
 
-                x += ((p1.x - p2.x)) * yPositionState.value * -1
-                y += HightPositionState.value * -(jumpOff)
+                x += ((p1.x - p2.x)) * yPositionState.value * - 1
+                y += HightPositionState.value * - (jumpOff)
 
             }
 
@@ -386,7 +506,10 @@ fun LoadData(
 
 
             drawImage(
-                image = manBitmap,
+//                image = if (JumpedPlatfrom % 2 == 0) {
+//                    manBitmap
+//                } else manBitmap,
+                image = manBitmap ,
                 topLeft = Offset(
                     x = x - (man_width / 2),    //listOfOffset.last().x + 50,
                     y = y - man_height  //listOfOffset.last().y - 30
@@ -414,7 +537,7 @@ fun LoadData(
                 points.value += 10
 
                 animState.value = !animState.value
-                invalidations++
+               // invalidations++
 
 
             }
@@ -467,11 +590,9 @@ fun Pulsating(pulseFraction: Float = 1.2f, content: @Composable () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun DefaultxPreview() {
-    TestTheme {
-        val a = remember { mutableStateOf(false) }
-        val pint = remember { mutableStateOf(0) }
-        LoadData(animState = a, points =pint)
-    }
+    val animationState = remember { mutableStateOf(false) }
+
+    QustionCard(animationState)
 }
 
 
