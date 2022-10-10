@@ -2,12 +2,14 @@ package com.diu.swan.test
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.Image
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,9 +23,12 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,16 +51,38 @@ class MotionTest : ComponentActivity() {
                     val animationState = remember { mutableStateOf(false) }
                     val points = remember { mutableStateOf(0) }
                     val configuration = LocalConfiguration.current
+                    val trans = rememberInfiniteTransition()
+
+                    val scale by trans.animateFloat(
+                        initialValue = 0.98f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1800),
+                            repeatMode = RepeatMode.Reverse
+                        )
+                    )
+
 
                     val screenHeight = configuration.screenHeightDp.dp
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White),
+                            .fillMaxWidth(),
 
                         contentAlignment = Alignment.BottomCenter
 
                     ) {
+
+
+                        Image(
+
+                            painter = painterResource(id = R.drawable.bg),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .matchParentSize(),
+                            contentScale = ContentScale.Crop ,
+
+
+                        )
 
 
                         LoadData(animationState, points)
@@ -109,6 +136,7 @@ fun QustionCard(animationState: MutableState<Boolean>) {
         ) {
         Column(
             modifier = Modifier.padding(horizontal = 18.dp)
+
         ) {
             Text(
                 "This is a question of the game ? ",
@@ -226,7 +254,7 @@ fun LoadData(
 ) {
 
     var invalidations by remember {
-        mutableStateOf(0)
+        mutableStateOf(0) 
     }
     var JumpedPlatfrom by remember {
         mutableStateOf(6)
@@ -263,14 +291,6 @@ fun LoadData(
         option
     )
 
-
-    val test_image = BitmapFactory.decodeResource(
-        LocalContext.current.resources,
-        R.drawable.rocket1,
-        option
-    )
-
-
     val man_image = BitmapFactory.decodeResource(
         LocalContext.current.resources,
         R.drawable.man,
@@ -284,7 +304,7 @@ fun LoadData(
     val man_width = LD.run { 50.dp.toPx() }
     val man_height = LD.run { 100.dp.toPx() }
 
-    val coins_width = LD.run { 30.dp.toPx() } * scale
+    val coins_width = LD.run { 30.dp.toPx() }  * scale
     val coins_height = LD.run { 30.dp.toPx() }
 
     val imageBitmap = Bitmap.createScaledBitmap(
@@ -297,11 +317,6 @@ fun LoadData(
         man_width.toInt(), man_height.toInt(), true
     ).asImageBitmap()
 
-    val testBitmap = Bitmap.createScaledBitmap(
-        test_image,
-        man_width.toInt(), man_height.toInt(), true
-
-    ).asImageBitmap()
 
     val CoinBitmap = Bitmap.createScaledBitmap(
         coins_image,
@@ -355,8 +370,9 @@ fun LoadData(
         modifier = Modifier
             .fillMaxWidth()
             .height(screenHeight)
+            .background(color = Color.Transparent)
             .padding(10.dp)
-            .padding(bottom = 50.dp),
+            .padding(bottom = 100.dp),
     ) {
         invalidations.let { inv ->
             //Draw Composables
@@ -374,12 +390,12 @@ fun LoadData(
                 if (i != 0) {
 
                     if (isLeft) {
-//                        drawLine(
-//                            start = Offset(x = 100f, y = i.toFloat()),
-//                            end = Offset(x = 220f, y = i.toFloat()),
-//                            color = Color.Blue,
-//                            strokeWidth = 10.0F
-//                        )
+                        drawLine(
+                            start = Offset(x = 100f, y = i.toFloat()),
+                            end = Offset(x = 220f, y = i.toFloat()),
+                            color = Color.Blue,
+                            strokeWidth = 10.0F
+                        )
 
                         drawImage(
                             image = imageBitmap,
@@ -394,12 +410,12 @@ fun LoadData(
 
                     } else {
 
-//                        drawLine(
-//                            start = Offset(x = canvasWidth - 220, y = i.toFloat()),
-//                            end = Offset(x = canvasWidth - 100, y = i.toFloat()),
-//                            color = Color.Blue,
-//                            strokeWidth = 10.0F
-//                        )
+                        drawLine(
+                            start = Offset(x = canvasWidth - 220, y = i.toFloat()),
+                            end = Offset(x = canvasWidth - 100, y = i.toFloat()),
+                            color = Color.Blue,
+                            strokeWidth = 10.0F
+                        )
 
                         drawImage(
                             image = imageBitmap,
@@ -422,17 +438,14 @@ fun LoadData(
 
             var step = 0
             isLeft = false
-            /*
-             render coin
-             */
-
             for (i in 0..canvasHeight.toInt() step (canvasHeight / 7).toInt()) {
 
                 Log.d("PRINT", "LoadData: $JumpedPlatfrom")
 
-                if (step in 1..5 && step < JumpedPlatfrom) {
+                if (step in 1..6 && step < JumpedPlatfrom) {
 
                     if (isLeft) {
+
 
 
                         drawImage(
@@ -446,7 +459,7 @@ fun LoadData(
                         )
 
 
-                      //  listOfOffset.add(Offset(x = 160f, y = i.toFloat()))
+                        listOfOffset.add(Offset(x = 160f, y = i.toFloat()))
 
                     } else {
 
@@ -457,12 +470,12 @@ fun LoadData(
                                 x = canvasWidth - (coins_width / 2) - (220 - 60),
                                 y = i.toFloat() - (coins_height)
                             ),
-                            alpha = scale,
+                            alpha = scale ,
 
                             )
 
 
-                     //   listOfOffset.add(Offset(x = canvasWidth - (220 - 60), y = i.toFloat()))
+                        listOfOffset.add(Offset(x = canvasWidth - (220 - 60), y = i.toFloat()))
                         Log.d("TAG", "LoadData: ${canvasWidth - 220} , ${i.toFloat()}")
                     }
 
@@ -486,6 +499,7 @@ fun LoadData(
             var x = 0f
             var y = 0f
 
+            val density_30 = LD.run { 15.dp.toPx() }
             val jumpOff = LD.run { 21.dp.toPx() }
 
 
@@ -497,8 +511,8 @@ fun LoadData(
                 x = p1.x    //+ density_30
                 y = p1.y    //- density_30
 
-                x += ((p1.x - p2.x)) * yPositionState.value * - 1
-                y += HightPositionState.value * - (jumpOff)
+                x += ((p1.x - p2.x)) * yPositionState.value * -1
+                y += HightPositionState.value * -(jumpOff)
 
             }
 
@@ -506,10 +520,7 @@ fun LoadData(
 
 
             drawImage(
-//                image = if (JumpedPlatfrom % 2 == 0) {
-//                    manBitmap
-//                } else manBitmap,
-                image = manBitmap ,
+                image = manBitmap,
                 topLeft = Offset(
                     x = x - (man_width / 2),    //listOfOffset.last().x + 50,
                     y = y - man_height  //listOfOffset.last().y - 30
@@ -537,7 +548,7 @@ fun LoadData(
                 points.value += 10
 
                 animState.value = !animState.value
-               // invalidations++
+                invalidations++
 
 
             }
@@ -566,6 +577,7 @@ fun LoadData(
 
     }
 }
+
 
 
 @Composable
