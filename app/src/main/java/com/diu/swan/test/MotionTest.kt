@@ -101,8 +101,8 @@ class MotionTest : ComponentActivity() {
 
                     val points = remember { mutableStateOf(0) }
                     val configuration = LocalConfiguration.current
-                    val trans = rememberInfiniteTransition()
-                    
+
+
                     Box(
                         modifier = Modifier.fillMaxWidth(),
 
@@ -271,6 +271,7 @@ class MotionTest : ComponentActivity() {
 
         val LD = LocalDensity.current
         val infiniteTransition = rememberInfiniteTransition()
+        val nextStepTransition = rememberInfiniteTransition()
         val index = remember {
             mutableStateOf(5)
         }
@@ -278,6 +279,9 @@ class MotionTest : ComponentActivity() {
         option.apply {
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
+
+
+
         val scale by infiniteTransition.animateFloat(
             initialValue = 0.90f, targetValue = 1f, animationSpec = infiniteRepeatable(
                 animation = tween(400), repeatMode = RepeatMode.Reverse
@@ -335,6 +339,13 @@ class MotionTest : ComponentActivity() {
                 animation = tween(
                     durationMillis = 2000, easing = LinearEasing
                 )
+            )
+        )
+
+
+        val nextStepTrans by infiniteTransition.animateFloat(
+            initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(
+                animation = tween(1200), repeatMode = RepeatMode.Reverse
             )
         )
 
@@ -533,12 +544,23 @@ class MotionTest : ComponentActivity() {
                 y = p1.y
 
             } else if (animState.value && !isWrongState.value) {
-                x = p1.x    //+ density_30
-                y = p1.y    //- density_30
+
+                if (listOfOffset[1] == p1) {
+                    x = 0F
+                    y = 0F
+
+                   // return@Canvas
+                }else {
+                    x = p1.x    //+ density_30
+                    y = p1.y    //- density_30
 
 
-                x += ((p1.x - p2.x)) * yPositionState.value * -1
-                y += HightPositionState.value * -(jumpOff)
+                    x += ((p1.x - p2.x)) * yPositionState.value * -1
+                    y += HightPositionState.value * -(jumpOff)
+                }
+
+
+
 
             }
 
@@ -621,8 +643,10 @@ class MotionTest : ComponentActivity() {
                     isLastPlatfrom.value = false
                     x = p1.x
                     y = p1.y
-                } else {
-                    isLastPlatfrom.value = true
+                }
+                else {
+
+                   // isLastPlatfrom.value = true
                 }
 
 
@@ -641,10 +665,12 @@ class MotionTest : ComponentActivity() {
 
                 if (listOfOffset.first() == p1) {
                     animState.value = false
-                    showDialouge.value = 2
-
-
+                  //  showDialouge.value = 2
                     countDownTimer.cancel()
+
+
+
+
                 }
 
 
