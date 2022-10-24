@@ -18,6 +18,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -396,10 +397,10 @@ class MotionTest : ComponentActivity() {
             for (i in 0..canvasHeight.toInt() step (canvasHeight / 7).toInt()) {
 
 
-                if (JumpedPlatfrom.value == nowStep + 1) {
-
-                    shake += shakeState.value
-                }
+//                if (JumpedPlatfrom.value == nowStep + 1) {
+//
+//                    shake += shakeState.value
+//                }
 
                 if (i != 0) {
 
@@ -414,7 +415,7 @@ class MotionTest : ComponentActivity() {
 
                         drawImage(
                             image = imageBitmap, topLeft = Offset(
-                                x = 160f - (platfrom_width / 2) + shake,
+                                x = 160f - (platfrom_width / 2),
                                 y = i.toFloat() - (platfrom_height / 2)
                             )
                         )
@@ -532,7 +533,8 @@ class MotionTest : ComponentActivity() {
                 x = p1.x
                 y = p1.y
 
-            } else if (animState.value && !isWrongState.value) {
+            }
+            else if (animState.value && !isWrongState.value) {
                 x = p1.x    //+ density_30
                 y = p1.y    //- density_30
 
@@ -566,12 +568,12 @@ class MotionTest : ComponentActivity() {
 
                     if (currentDeath.value != 0) {
 
-                        index.value = index.value - 1
-
-                        p1 = listOfOffset[index.value]
-                        p2 = if (index.value != 0) {
-                            listOfOffset[index.value - 1]
-                        } else listOfOffset[index.value]
+//                        index.value = index.value
+//
+//                        p1 = listOfOffset[index.value]
+//                        p2 = if (index.value != 0) {
+//                            listOfOffset[index.value - 1]
+//                        } else listOfOffset[index.value]
 
 
                         x = p1.x
@@ -583,19 +585,22 @@ class MotionTest : ComponentActivity() {
                         Log.d("DEATH", "LoadData: ${currentDeath.value}")
 
 
-                    } else {
+                    }
+
+                    else {
 
                         showDialouge.value = 1
 
                     }
 
-                    JumpedPlatfrom.value -= 1
+                   // JumpedPlatfrom.value -= 1
                     println(currentDeath.value)
 
                     if (currentDeath.value != 0) {
                         countDownTimer.cancel()
                         countDownTimer.start()
                     }
+
                     animState.value = false
                     isWrongState.value = false
 
@@ -722,9 +727,11 @@ class MotionTest : ComponentActivity() {
                             .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
-                            .clickable {
-                                Log.d("JUMPED CLICK", "${JumpedPlatfrom.value}")
-                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value) {
+                            .clickable(
+                                enabled =  !isLastPlatfrom.value
+                            ){
+
+                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
                                     countDownTimer.cancel()
                                     mMediaPlayer.start()
 
@@ -754,8 +761,10 @@ class MotionTest : ComponentActivity() {
                             .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
-                            .clickable {
-                                if (!animationState.value && !isWrongState.value) {
+                            .clickable(
+                                enabled =  !isLastPlatfrom.value
+                            ) {
+                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0 ) {
                                     countDownTimer.cancel()
                                     mMediaPlayer.start()
 
@@ -789,9 +798,13 @@ class MotionTest : ComponentActivity() {
                             .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
-                            .clickable {
+                            .clickable (
+                                enabled = currentDeath.value != 0
 
-                                if (animationState.value == false && isWrongState.value == false) {
+                            )
+                            {
+
+                                if (!animationState.value && !isWrongState.value) {
                                     Log.d("WRONGCALL", "QuestionCard: call ")
                                     isWrongState.value = true
                                     countDownTimer.cancel()
@@ -819,7 +832,12 @@ class MotionTest : ComponentActivity() {
                             .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
-                            .clickable {
+                            .clickable(
+
+                                enabled = currentDeath.value != 0
+
+
+                            ) {
 
                                 if (!animationState.value && !isWrongState.value) {
                                     Log.d("WRONGCALL", "QuestionCard: call ")
