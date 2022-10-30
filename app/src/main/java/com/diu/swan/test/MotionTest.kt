@@ -1,6 +1,7 @@
 package com.diu.swan.test
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,27 +10,37 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.util.DisplayMetrics
+import android.util.LayoutDirection
 import android.util.Log
+import android.util.TypedValue
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.*
+
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -41,7 +52,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.os.postDelayed
+import androidx.core.text.layoutDirection
 import com.diu.swan.test.ui.theme.TestTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.*
 
 
 class MotionTest : ComponentActivity() {
@@ -60,7 +75,6 @@ class MotionTest : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background
                 ) {
-
                     val context = LocalContext.current
                     val activity = (LocalContext.current as? Activity)
                     mMediaPlayer = MediaPlayer()
@@ -88,12 +102,10 @@ class MotionTest : ComponentActivity() {
 //                                wrongMediaPlayer.start()
 //                                currentDeath.value = currentDeath.value - 1
 //                                isWrongState.value = !isWrongState.value
-                                animationState.value = true
+                                //   animationState.value = true
                                 isSkippingState.value = true
 
                             }
-
-
                         }
                     }
 
@@ -103,27 +115,50 @@ class MotionTest : ComponentActivity() {
                     val points = remember { mutableStateOf(0) }
                     val configuration = LocalConfiguration.current
                     val trans = rememberInfiniteTransition()
-                    
+
+                    val bgScrollLeft by animateFloatAsState(
+                        targetValue = Float.MAX_VALUE, animationSpec = tween(durationMillis = 800)
+                    )
+
+                    val scroll = rememberLazyListState()
+
+                    val coroutineScope = rememberCoroutineScope()
+
+                    LaunchedEffect(key1 = Unit) {
+                        coroutineScope.launch {
+                            while (true) {
+                                scroll.autoScroll()
+                            }
+                        }
+                    }
+
                     Box(
                         modifier = Modifier.fillMaxWidth(),
 
                         contentAlignment = Alignment.BottomCenter
 
                     ) {
-
-
-                        Image(
-
-                            painter = painterResource(id = R.drawable.bg),
-                            contentDescription = null,
-                            modifier = Modifier.matchParentSize(),
-                            contentScale = ContentScale.Crop,
-
-
-                            )
-
-
-
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Blue),
+                            state = scroll,
+                            userScrollEnabled = false
+                        ) {
+                            for (i in 0..10) {
+                                item {
+                                    val image = if (i % 2 == 0) R.drawable.bg else R.drawable.bg2
+                                    Image(
+                                        painter = painterResource(id = image),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.FillHeight,
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .wrapContentWidth()
+                                    )
+                                }
+                            }
+                        }
 
                         LoadData(
                             animationState,
@@ -134,14 +169,8 @@ class MotionTest : ComponentActivity() {
                             isSkippingState
                         )
 
-
-
                         QuestionCard(
-                            animationState,
-                            isWrongState,
-                            timeData,
-                            currentDeath,
-                            isSkippingState
+                            animationState, isWrongState, timeData, currentDeath, isSkippingState
                         )
 
 
@@ -176,7 +205,6 @@ class MotionTest : ComponentActivity() {
                                     contentDescription = "",
                                     modifier = Modifier.size(18.dp)
                                 )
-
                             }
                         }
 
@@ -251,6 +279,15 @@ class MotionTest : ComponentActivity() {
         }, title = { Text(text = "Oh No!!!") }, text = { Text(text = "$title") })
     }
 
+
+    @Stable
+    fun Modifier.mirror(isMirror: Boolean = false): Modifier {
+        return if (Locale.getDefault().layoutDirection == LayoutDirection.RTL && isMirror) this.scale(
+            scaleX = -1f,
+            scaleY = 1f
+        )
+        else this
+    }
 
     @Composable
     fun LoadData(
@@ -329,16 +366,6 @@ class MotionTest : ComponentActivity() {
             0f
         }
 
-        val yPositionState = infiniteTransition.animateFloat(
-
-            initialValue = 0.0f, targetValue = ytarget, animationSpec = infiniteRepeatable(
-
-                animation = tween(
-                    durationMillis = 2000, easing = LinearEasing
-                )
-            )
-        )
-
         val shakeState = infiniteTransition.animateFloat(
             initialValue = if (!animState.value) {
                 -8f
@@ -357,24 +384,175 @@ class MotionTest : ComponentActivity() {
         )
 
 
+        var manPosition by remember { mutableStateOf(Offset(0f, 0f)) }
+        var previousPosition by remember { mutableStateOf(Offset(0f, 0f)) }
+
         val HightPositionState = infiniteTransition.animateFloat(
-
-            initialValue = 0.0f, targetValue = heightarget, animationSpec = infiniteRepeatable(
-
+            initialValue = 0f, targetValue = if (animState.value) 5f else {
+                0f
+            }, animationSpec = infiniteRepeatable(
                 animation = tween(
-                    durationMillis = 2000, easing = LinearOutSlowInEasing
+                    durationMillis = 3000, easing = LinearOutSlowInEasing
                 )
             )
         )
 
+        val WidthPositionState = infiniteTransition.animateFloat(
+            initialValue = 0f, targetValue = if (animState.value) 2f else {
+                0f
+            }, animationSpec = infiniteRepeatable(
+
+                animation = tween(
+                    durationMillis = 3000, easing = LinearEasing
+                )
+            )
+        )
 
         val configuration = LocalConfiguration.current
 
         val screenHeight = configuration.screenHeightDp.dp
         val screenWidth = configuration.screenWidthDp.dp
 
+        val scroll = rememberLazyListState()
 
-        Canvas(
+        val coroutineScope = rememberCoroutineScope()
+
+        LaunchedEffect(key1 = Unit) {
+            coroutineScope.launch {
+                while (true) {
+                    scroll.autoScroll()
+                }
+            }
+        }
+
+
+        var stage by remember { mutableStateOf(3) }
+        var drawNow by remember { mutableStateOf(false) }
+
+        LaunchedEffect(key1 = stage) {
+            drawNow = true // true
+            delay(10000)
+            drawNow = false
+        }
+        val context = LocalContext.current
+        LaunchedEffect(key1 = scroll.firstVisibleItemIndex) {
+            println("scroll: ${scroll.firstVisibleItemIndex}, ${scroll.firstVisibleItemScrollOffset}")
+            stage += 1
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                state = scroll,
+                reverseLayout = true,
+                userScrollEnabled = false
+            ) {
+                for (question in 0..100) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onGloballyPositioned { layoutCoordinates ->
+                                    if (stage == question) {
+                                        Log.d(
+                                            "layoutCoordinates", "LoadData: ${
+                                                dipToPixels(
+                                                    context, screenWidth.value
+                                                )
+                                            }.value."
+                                        )
+                                        manPosition = layoutCoordinates
+                                            .positionInWindow()
+                                            .copy(
+                                                x = if (question % 2 == 0) 100f else dipToPixels(
+                                                    context, screenWidth.value
+                                                ) - 100f
+                                            )
+                                    }
+                                    if (stage - 1 == question) {
+                                        previousPosition = layoutCoordinates
+                                            .positionInWindow()
+                                            .copy(
+                                                x = if (question % 2 == 0) 100f else dipToPixels(
+                                                    context, screenWidth.value
+                                                ) - dipToPixels(
+                                                    context, 50f
+                                                )
+                                            )
+                                    }
+                                },
+                            horizontalArrangement = if (question % 2 == 0) Arrangement.Start else Arrangement.End
+                        ) {
+
+                            Box(modifier = Modifier.size(100.dp)) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.platfrom),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.width(200.dp)
+                                )
+                                // Text(text = question.toString())
+
+//                                if (stage == question + 1 && !animState.value) {
+//                                    Image(
+//                                        painter = painterResource(id = R.drawable.man),
+//                                        contentDescription = null,
+//                                        modifier = Modifier.align(Alignment.TopCenter)
+//                                    )
+//                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val jumpOffAngle = LD.run {
+                30.dp.toPx()
+            }
+
+            var x = previousPosition.x
+            var y = previousPosition.y
+
+            if (drawNow) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+
+                        x += ((manPosition.x - previousPosition.x) * WidthPositionState.value) //*  WidthPositionState.value   //if  (stage % 2 == 0) -1f else  1f
+                        y += HightPositionState.value * (-jumpOffAngle)
+
+                        Log.d("TAG", "LoadData:  $manPosition  $previousPosition $x  ")
+
+                        if (WidthPositionState.value > 0.98 && animState.value) {
+
+                            print("here")
+
+
+                            x = manPosition.x
+
+                            y = manPosition.y
+                            stage += 1
+                            animState.value = false
+
+
+                        }
+
+                        drawCircle(
+                            color = Color.White, radius = 40f, center = Offset(
+                                x = x, y = y
+                            )
+                        )
+
+
+                    }) {
+
+                }
+            }
+        }
+
+        /*Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(screenHeight)
@@ -382,7 +560,6 @@ class MotionTest : ComponentActivity() {
                 .padding(10.dp)
                 .padding(bottom = 100.dp),
         ) {
-
             //Draw Composables
             // Log.d("PRINT", "LoadData: printing $inv")
             val canvasWidth = size.width
@@ -394,7 +571,10 @@ class MotionTest : ComponentActivity() {
 
             var shake = 0f
             var nowStep = 0
-            for (i in 0..canvasHeight.toInt() step (canvasHeight / 7).toInt()) {
+
+            val stepPx = (canvasHeight / 7).toInt()
+
+            for (i in 0..canvasHeight.toInt() step stepPx) {
 
 
 //                if (JumpedPlatfrom.value == nowStep + 1) {
@@ -490,8 +670,6 @@ class MotionTest : ComponentActivity() {
                     }
 
                     isLeft = !isLeft
-
-
                 }
                 step += 1
 
@@ -533,8 +711,7 @@ class MotionTest : ComponentActivity() {
                 x = p1.x
                 y = p1.y
 
-            }
-            else if (animState.value && !isWrongState.value) {
+            } else if (animState.value && !isWrongState.value) {
                 x = p1.x    //+ density_30
                 y = p1.y    //- density_30
 
@@ -552,9 +729,8 @@ class MotionTest : ComponentActivity() {
                 topLeft = Offset(
                     x = x - (man_width / 2),    //listOfOffset.last().x + 50,
                     y = y - man_height - 12  //listOfOffset.last().y - 30
-                ),
-
                 )
+            )
 
 
             if (yPositionState.value > 0.98 && animState.value) {
@@ -584,16 +760,11 @@ class MotionTest : ComponentActivity() {
 
                         Log.d("DEATH", "LoadData: ${currentDeath.value}")
 
-
-                    }
-
-                    else {
-
+                    } else {
                         showDialouge.value = 1
-
                     }
 
-                   // JumpedPlatfrom.value -= 1
+                    // JumpedPlatfrom.value -= 1
                     println(currentDeath.value)
 
                     if (currentDeath.value != 0) {
@@ -603,8 +774,6 @@ class MotionTest : ComponentActivity() {
 
                     animState.value = false
                     isWrongState.value = false
-
-
 
                     return@Canvas
                 }
@@ -659,12 +828,10 @@ class MotionTest : ComponentActivity() {
             }
 
 
-        }
-
+        }*/
 
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun QuestionCard(
         animationState: MutableState<Boolean>,
@@ -677,20 +844,17 @@ class MotionTest : ComponentActivity() {
         mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
         val wrongPlayer = MediaPlayer.create(context, R.raw.fail)
         Card(
-
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 0.dp
             ),
-
-            containerColor = Color(0x856808FF),
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            contentColor = Color(0x856808FF),
-
-            ) {
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0x856808FF), contentColor = Color(0x856808FF)
+            )
+        ) {
             Column(
                 modifier = Modifier.padding(horizontal = 18.dp)
-
             ) {
                 Text(
                     "${
@@ -728,8 +892,8 @@ class MotionTest : ComponentActivity() {
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
                             .clickable(
-                                enabled =  !isLastPlatfrom.value
-                            ){
+                                enabled = !isLastPlatfrom.value
+                            ) {
 
                                 if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
                                     countDownTimer.cancel()
@@ -762,9 +926,9 @@ class MotionTest : ComponentActivity() {
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
                             .clickable(
-                                enabled =  !isLastPlatfrom.value
+                                enabled = !isLastPlatfrom.value
                             ) {
-                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0 ) {
+                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
                                     countDownTimer.cancel()
                                     mMediaPlayer.start()
 
@@ -798,11 +962,10 @@ class MotionTest : ComponentActivity() {
                             .clip(RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp))
                             .background(color = Color.Magenta)
                             .padding(vertical = 8.dp)
-                            .clickable (
+                            .clickable(
                                 enabled = currentDeath.value != 0
 
-                            )
-                            {
+                            ) {
 
                                 if (!animationState.value && !isWrongState.value) {
                                     Log.d("WRONGCALL", "QuestionCard: call ")
@@ -838,7 +1001,6 @@ class MotionTest : ComponentActivity() {
 
 
                             ) {
-
                                 if (!animationState.value && !isWrongState.value) {
                                     Log.d("WRONGCALL", "QuestionCard: call ")
                                     countDownTimer.cancel()
@@ -847,7 +1009,6 @@ class MotionTest : ComponentActivity() {
                                     isWrongState.value = true
                                 }
                                 // Handle the click
-
 
                             },
                         textAlign = TextAlign.Center,
@@ -900,9 +1061,26 @@ class ClickHelper private constructor() {
     companion object {
         @Volatile
         private var instance: ClickHelper? = null
-        fun getInstance() =
-            instance ?: synchronized(this) {
-                instance ?: ClickHelper().also { instance = it }
-            }
+        fun getInstance() = instance ?: synchronized(this) {
+            instance ?: ClickHelper().also { instance = it }
+        }
     }
 }
+
+fun dipToPixels(context: Context, dipValue: Float): Float {
+    val metrics: DisplayMetrics = context.resources.displayMetrics
+    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics)
+}
+
+suspend fun ScrollableState.autoScroll(
+    animationSpec: AnimationSpec<Float> = tween(durationMillis = 800, easing = LinearEasing)
+) {
+    var previousValue = 0f
+    scroll {
+        animate(0f, SCROLL_DX, animationSpec = animationSpec) { currentValue, _ ->
+            previousValue += scrollBy(currentValue - previousValue)
+        }
+    }
+}
+
+private const val SCROLL_DX = 24f
