@@ -159,18 +159,27 @@ class MotionTest : ComponentActivity() {
                                 }
                             }
                         }
-
+                        var changePos = remember {
+                            mutableStateOf(0)
+                        }
+                        var stage = remember { mutableStateOf(3) }
                         LoadData(
                             animationState,
                             points,
                             isWrongState,
                             showDialouge,
-                            currentDeath,
-                            isSkippingState
+                            stage,
+                            changePos
                         )
 
                         QuestionCard(
-                            animationState, isWrongState, timeData, currentDeath, isSkippingState
+                            animationState,
+                            isWrongState,
+                            timeData,
+                            currentDeath,
+                            isSkippingState,
+                            stage,
+                            changePos
                         )
 
 
@@ -295,13 +304,11 @@ class MotionTest : ComponentActivity() {
         points: MutableState<Int>,
         isWrongState: MutableState<Boolean>,
         showDialouge: MutableState<Int>,
-        currentDeath: MutableState<Int>,
-        isSkipping: MutableState<Boolean>
+        stage: MutableState<Int>,
+        cnageStage: MutableState<Int>
     ) {
 
-        var invalidations by remember {
-            mutableStateOf(0)
-        }
+
         JumpedPlatfrom = remember {
             mutableStateOf(6)
         }
@@ -339,7 +346,7 @@ class MotionTest : ComponentActivity() {
         val platfrom_height = LD.run { 60.dp.toPx() }
 
         val man_width = LD.run { 50.dp.toPx() }
-        val man_height = LD.run { 100.dp.toPx() }
+        val man_height = LD.run { 70.dp.toPx() }
 
         val coins_width = LD.run { 30.dp.toPx() } * scale
         val coins_height = LD.run { 30.dp.toPx() }
@@ -385,6 +392,7 @@ class MotionTest : ComponentActivity() {
 
 
         var manPosition by remember { mutableStateOf(Offset(0f, 0f)) }
+        var manPostionStatic = Offset(0f, 0f)
         var previousPosition by remember { mutableStateOf(Offset(0f, 0f)) }
 
         val HightPositionState = infiniteTransition.animateFloat(
@@ -426,18 +434,17 @@ class MotionTest : ComponentActivity() {
         }
 
 
-        var stage by remember { mutableStateOf(3) }
         var drawNow by remember { mutableStateOf(false) }
-
-        LaunchedEffect(key1 = stage) {
-            drawNow = true // true
+        drawNow = true
+        LaunchedEffect(key1 = stage.value) {
+            drawNow = false // true
             delay(10000)
             drawNow = false
         }
         val context = LocalContext.current
         LaunchedEffect(key1 = scroll.firstVisibleItemIndex) {
             println("scroll: ${scroll.firstVisibleItemIndex}, ${scroll.firstVisibleItemScrollOffset}")
-            stage += 1
+            stage.value += 1
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -455,7 +462,7 @@ class MotionTest : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .onGloballyPositioned { layoutCoordinates ->
-                                    if (stage == question) {
+                                    if (stage.value - 1 == question) {
                                         Log.d(
                                             "layoutCoordinates", "LoadData: ${
                                                 dipToPixels(
@@ -463,6 +470,9 @@ class MotionTest : ComponentActivity() {
                                                 )
                                             }.value."
                                         )
+
+
+
                                         manPosition = layoutCoordinates
                                             .positionInWindow()
                                             .copy(
@@ -470,8 +480,12 @@ class MotionTest : ComponentActivity() {
                                                     context, screenWidth.value
                                                 ) - 100f
                                             )
+
+                                        manPostionStatic = manPosition
                                     }
-                                    if (stage - 1 == question) {
+
+                                    if (stage.value - 2 == question) {
+
                                         previousPosition = layoutCoordinates
                                             .positionInWindow()
                                             .copy(
@@ -481,6 +495,8 @@ class MotionTest : ComponentActivity() {
                                                     context, 50f
                                                 )
                                             )
+                                        cnageStage.value = stage.value
+
                                     }
                                 },
                             horizontalArrangement = if (question % 2 == 0) Arrangement.Start else Arrangement.End
@@ -509,41 +525,95 @@ class MotionTest : ComponentActivity() {
             }
 
             val jumpOffAngle = LD.run {
-                30.dp.toPx()
+                26.dp.toPx()
             }
 
-            var x = previousPosition.x
-            var y = previousPosition.y
+            var x = 0f
+            var y = 0f
+
+
+            x = previousPosition.x
+            y = previousPosition.y
+
 
             if (drawNow) {
                 Box(modifier = Modifier
                     .fillMaxSize()
                     .drawBehind {
 
-                        x += ((manPosition.x - previousPosition.x) * WidthPositionState.value) //*  WidthPositionState.value   //if  (stage % 2 == 0) -1f else  1f
+                        if (isWrongState.value) {
+                            animState.value = true
+
+                            x = previousPosition.x    //+ density_30
+                            y = previousPosition.y      //- density_30
+
+                            x += (10) * WidthPositionState.value
+                            y += HightPositionState.value * 500
+                        }
+
+
+                        //if (WidthPositionState.value != 0f) {
+                        x += ((manPostionStatic.x - previousPosition.x) * WidthPositionState.value) + (if (stage.value % 2 == 0) {
+                            jumpOffAngle
+                        } else {
+                            -jumpOffAngle
+                        }) //*  WidthPositionState.value   //if  (stage % 2 == 0) -1f else  1f
                         y += HightPositionState.value * (-jumpOffAngle)
+                        //  }
 
                         Log.d("TAG", "LoadData:  $manPosition  $previousPosition $x  ")
 
-                        if (WidthPositionState.value > 0.98 && animState.value) {
-
-                            print("here")
+                        if (WidthPositionState.value > 0.80 && animState.value) {
 
 
-                            x = manPosition.x
+                            if (isWrongState.value) {
 
-                            y = manPosition.y
-                            stage += 1
+                                x = previousPosition.x
+
+                                y = previousPosition.y
+
+                                animState.value = false
+                                isWrongState.value = false
+                                return@drawBehind
+
+                            }
+
+
+                            x = manPostionStatic.x
+
+                            y = manPostionStatic.y
+                            stage.value += 1
+
+                            manPostionStatic = manPosition
+
+                            // y = manPostionStatic.y
                             animState.value = false
 
 
                         }
 
-                        drawCircle(
-                            color = Color.White, radius = 40f, center = Offset(
-                                x = x, y = y
+
+
+                        drawImage(
+                            image = manBitmap,
+                            topLeft = Offset(
+                                x = x,  //if(stage % 2 != 0 ){x - LD.run { 21.dp.toPx() }} else {x  + LD.run { 21.dp.toPx() }},    //listOfOffset.last().x + 50,
+                                y = y - man_height   //listOfOffset.last().y - 30
                             )
                         )
+
+
+//                        Image(
+//                                        painter = painterResource(id = R.drawable.man),
+//                                        contentDescription = null,
+//                                        modifier = Modifier.align(Alignment.TopCenter)
+//                                    )
+
+//                        drawCircle(
+//                            color = Color.White, radius = 40f, center = Offset(
+//                                x = x, y = y
+//                            )
+//                        )
 
 
                     }) {
@@ -839,6 +909,8 @@ class MotionTest : ComponentActivity() {
         timeData: MutableState<Long>,
         currentDeath: MutableState<Int>,
         isSkippping: MutableState<Boolean>,
+        stage: MutableState<Int>,
+        changePos: MutableState<Int>,
     ) {
         val context = LocalContext.current
         mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
@@ -896,12 +968,21 @@ class MotionTest : ComponentActivity() {
                             ) {
 
                                 if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
+
                                     countDownTimer.cancel()
                                     mMediaPlayer.start()
 
                                     Handler(Looper.getMainLooper()).postDelayed(50) {
 
-                                        animationState.value = !animationState.value
+                                        Log.d(
+                                            "POSTION",
+                                            "QuestionCard: ${changePos.value}  -> ${stage.value}"
+                                        )
+
+                                        if (changePos.value == stage.value) {
+                                            animationState.value = !animationState.value
+                                        }
+
 
                                     }
                                 }
