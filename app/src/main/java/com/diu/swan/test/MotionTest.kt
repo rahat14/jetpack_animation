@@ -23,7 +23,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.*
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,11 +32,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -56,6 +55,8 @@ import androidx.core.text.layoutDirection
 import com.diu.swan.test.ui.theme.TestTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.Math.PI
+import java.lang.Math.sin
 import java.util.*
 
 
@@ -116,10 +117,6 @@ class MotionTest : ComponentActivity() {
                     val configuration = LocalConfiguration.current
                     val trans = rememberInfiniteTransition()
 
-                    val bgScrollLeft by animateFloatAsState(
-                        targetValue = Float.MAX_VALUE, animationSpec = tween(durationMillis = 800)
-                    )
-
                     val scroll = rememberLazyListState()
 
                     val coroutineScope = rememberCoroutineScope()
@@ -134,9 +131,7 @@ class MotionTest : ComponentActivity() {
 
                     Box(
                         modifier = Modifier.fillMaxWidth(),
-
                         contentAlignment = Alignment.BottomCenter
-
                     ) {
                         LazyRow(
                             modifier = Modifier
@@ -159,17 +154,19 @@ class MotionTest : ComponentActivity() {
                                 }
                             }
                         }
+
                         var changePos = remember {
                             mutableStateOf(0)
                         }
-                        var stage = remember { mutableStateOf(3) }
+
+                        val stage = remember { mutableStateOf(4) }
+
                         LoadData(
                             animationState,
                             points,
                             isWrongState,
                             showDialouge,
-                            stage,
-                            changePos
+                            stage
                         )
 
                         QuestionCard(
@@ -181,7 +178,6 @@ class MotionTest : ComponentActivity() {
                             stage,
                             changePos
                         )
-
 
                         Row(
                             modifier = Modifier
@@ -220,6 +216,7 @@ class MotionTest : ComponentActivity() {
                         val hide = {
                             showDialouge.value = 0
                         }
+
                         val replay = {
                             showDialouge.value = 0
                             activity?.finish()
@@ -288,7 +285,6 @@ class MotionTest : ComponentActivity() {
         }, title = { Text(text = "Oh No!!!") }, text = { Text(text = "$title") })
     }
 
-
     @Stable
     fun Modifier.mirror(isMirror: Boolean = false): Modifier {
         return if (Locale.getDefault().layoutDirection == LayoutDirection.RTL && isMirror) this.scale(
@@ -304,11 +300,8 @@ class MotionTest : ComponentActivity() {
         points: MutableState<Int>,
         isWrongState: MutableState<Boolean>,
         showDialouge: MutableState<Int>,
-        stage: MutableState<Int>,
-        cnageStage: MutableState<Int>
+        stage: MutableState<Int>
     ) {
-
-
         JumpedPlatfrom = remember {
             mutableStateOf(6)
         }
@@ -346,7 +339,7 @@ class MotionTest : ComponentActivity() {
         val platfrom_height = LD.run { 60.dp.toPx() }
 
         val man_width = LD.run { 50.dp.toPx() }
-        val man_height = LD.run { 70.dp.toPx() }
+        val man_height = LD.run { 65.dp.toPx() }
 
         val coins_width = LD.run { 30.dp.toPx() } * scale
         val coins_height = LD.run { 30.dp.toPx() }
@@ -391,9 +384,9 @@ class MotionTest : ComponentActivity() {
         )
 
 
-        var manPosition by remember { mutableStateOf(Offset(0f, 0f)) }
+        val manPosition = remember { mutableStateOf(Offset(0f, 0f)) }
         var manPostionStatic = Offset(0f, 0f)
-        var previousPosition by remember { mutableStateOf(Offset(0f, 0f)) }
+        val previousPosition = remember { mutableStateOf(Offset(0f, 0f)) }
 
         val HightPositionState = infiniteTransition.animateFloat(
             initialValue = 0f, targetValue = if (animState.value) 5f else {
@@ -435,17 +428,42 @@ class MotionTest : ComponentActivity() {
 
 
         var drawNow by remember { mutableStateOf(false) }
-        drawNow = true
+
         LaunchedEffect(key1 = stage.value) {
-            drawNow = false // true
-            delay(10000)
             drawNow = false
+            delay(800)
+            drawNow = true
         }
+
         val context = LocalContext.current
-        LaunchedEffect(key1 = scroll.firstVisibleItemIndex) {
-            println("scroll: ${scroll.firstVisibleItemIndex}, ${scroll.firstVisibleItemScrollOffset}")
-            stage.value += 1
+        val firstItem = remember { derivedStateOf { scroll.firstVisibleItemIndex } }
+
+        println("firstItem: ${firstItem.value}")
+
+        LaunchedEffect(key1 = firstItem.value) {
+            if (firstItem.value + 2 == stage.value) {
+                stage.value += 1
+            }
         }
+
+
+        val xOffset = animateFloatAsState(
+            targetValue = manPosition.value.x,
+            animationSpec = tween(durationMillis = 1200, easing = LinearEasing)
+        )
+
+        val yOffset = animateFloatAsState(
+            targetValue = manPosition.value.y,
+            animationSpec = tween(durationMillis = 800, easing = LinearEasing)
+        )
+
+        val TWO_PI = 2 * PI
+
+        val getY: (Float, Float, Float) -> Float = { x, amplitude, period ->
+            (sin(x * TWO_PI / period) * amplitude).toFloat()
+        }
+
+        var isStartAlign by remember { mutableStateOf(true) }
 
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
@@ -462,63 +480,31 @@ class MotionTest : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .onGloballyPositioned { layoutCoordinates ->
-                                    if (stage.value - 1 == question) {
-                                        Log.d(
-                                            "layoutCoordinates", "LoadData: ${
-                                                dipToPixels(
-                                                    context, screenWidth.value
-                                                )
-                                            }.value."
-                                        )
-
-
-
-                                        manPosition = layoutCoordinates
+                                    if (question == stage.value) {
+                                        manPosition.value = layoutCoordinates
                                             .positionInWindow()
                                             .copy(
                                                 x = if (question % 2 == 0) 100f else dipToPixels(
                                                     context, screenWidth.value
-                                                ) - 100f
+                                                )  - 100f
                                             )
-
-                                        manPostionStatic = manPosition
+                                        isStartAlign = question % 2 == 0
                                     }
 
-                                    if (stage.value - 2 == question) {
-
-                                        previousPosition = layoutCoordinates
+                                    if (question == stage.value - 1) {
+                                        previousPosition.value = layoutCoordinates
                                             .positionInWindow()
-                                            .copy(
-                                                x = if (question % 2 == 0) 100f else dipToPixels(
-                                                    context, screenWidth.value
-                                                ) - dipToPixels(
-                                                    context, 50f
-                                                )
-                                            )
-                                        cnageStage.value = stage.value
-
                                     }
                                 },
                             horizontalArrangement = if (question % 2 == 0) Arrangement.Start else Arrangement.End
                         ) {
-
-                            Box(modifier = Modifier.size(100.dp)) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.platfrom),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.width(200.dp)
-                                )
-                                // Text(text = question.toString())
-
-//                                if (stage == question + 1 && !animState.value) {
-//                                    Image(
-//                                        painter = painterResource(id = R.drawable.man),
-//                                        contentDescription = null,
-//                                        modifier = Modifier.align(Alignment.TopCenter)
-//                                    )
-//                                }
-                            }
+                            Platform(
+                                question = question,
+                                stage = stage,
+                                drawNow = drawNow,
+                                manPosition = manPosition,
+                                previousPosition = previousPosition
+                            )
                         }
                     }
                 }
@@ -528,96 +514,33 @@ class MotionTest : ComponentActivity() {
                 26.dp.toPx()
             }
 
-            var x = 0f
-            var y = 0f
-
-
-            x = previousPosition.x
-            y = previousPosition.y
-
-
-            if (drawNow) {
-                Box(modifier = Modifier
+            Box(
+                modifier = Modifier
                     .fillMaxSize()
-                    .drawBehind {
-
-                        if (isWrongState.value) {
-                            animState.value = true
-
-                            x = previousPosition.x    //+ density_30
-                            y = previousPosition.y      //- density_30
-
-                            x += (10) * WidthPositionState.value
-                            y += HightPositionState.value * 500
-                        }
-
-
-                        //if (WidthPositionState.value != 0f) {
-                        x += ((manPostionStatic.x - previousPosition.x) * WidthPositionState.value) + (if (stage.value % 2 == 0) {
-                            jumpOffAngle
-                        } else {
-                            -jumpOffAngle
-                        }) //*  WidthPositionState.value   //if  (stage % 2 == 0) -1f else  1f
-                        y += HightPositionState.value * (-jumpOffAngle)
-                        //  }
-
-                        Log.d("TAG", "LoadData:  $manPosition  $previousPosition $x  ")
-
-                        if (WidthPositionState.value > 0.80 && animState.value) {
-
-
-                            if (isWrongState.value) {
-
-                                x = previousPosition.x
-
-                                y = previousPosition.y
-
-                                animState.value = false
-                                isWrongState.value = false
-                                return@drawBehind
-
+            ) {
+                if (!drawNow) {
+                    Box(
+                        modifier = Modifier
+                            .width(50.dp)
+                            .height(65.dp)
+                            .graphicsLayer {
+                                translationX = xOffset.value
+//                            translationY = getY(xOffset.value, 100f, 800f)
+                                translationY = yOffset.value - man_height
                             }
-
-
-                            x = manPostionStatic.x
-
-                            y = manPostionStatic.y
-                            stage.value += 1
-
-                            manPostionStatic = manPosition
-
-                            // y = manPostionStatic.y
-                            animState.value = false
-
-
-                        }
-
-
-
-                        drawImage(
-                            image = manBitmap,
-                            topLeft = Offset(
-                                x = x,  //if(stage % 2 != 0 ){x - LD.run { 21.dp.toPx() }} else {x  + LD.run { 21.dp.toPx() }},    //listOfOffset.last().x + 50,
-                                y = y - man_height   //listOfOffset.last().y - 30
-                            )
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.man),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    if (isStartAlign) {
+                                        rotationY = 180f
+                                    }
+                                }
                         )
-
-
-//                        Image(
-//                                        painter = painterResource(id = R.drawable.man),
-//                                        contentDescription = null,
-//                                        modifier = Modifier.align(Alignment.TopCenter)
-//                                    )
-
-//                        drawCircle(
-//                            color = Color.White, radius = 40f, center = Offset(
-//                                x = x, y = y
-//                            )
-//                        )
-
-
-                    }) {
-
+                    }
                 }
             }
         }
@@ -902,6 +825,7 @@ class MotionTest : ComponentActivity() {
 
     }
 
+
     @Composable
     fun QuestionCard(
         animationState: MutableState<Boolean>,
@@ -979,9 +903,11 @@ class MotionTest : ComponentActivity() {
                                             "QuestionCard: ${changePos.value}  -> ${stage.value}"
                                         )
 
-                                        if (changePos.value == stage.value) {
-                                            animationState.value = !animationState.value
-                                        }
+                                        stage.value += 1
+
+//                                        if (changePos.value == stage.value) {
+//                                            animationState.value = !animationState.value
+//                                        }
 
 
                                     }
