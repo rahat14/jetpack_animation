@@ -43,7 +43,7 @@ fun Platform(
                 .align(Alignment.BottomCenter)
         )
 
-        Text(text = question.toString())
+            //Text(text = question.toString())
 
         AnimatedContent(
             targetState = stage.value == question && drawNow,

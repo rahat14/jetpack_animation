@@ -8,8 +8,6 @@ import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
-import android.os.Looper
 import android.util.DisplayMetrics
 import android.util.LayoutDirection
 import android.util.Log
@@ -50,11 +48,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.os.postDelayed
 import androidx.core.text.layoutDirection
+import com.diu.swan.test.model.QuestionsModel
 import com.diu.swan.test.ui.theme.TestTheme
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.lang.Math.PI
 import java.lang.Math.sin
 import java.util.*
@@ -67,6 +69,9 @@ class MotionTest : ComponentActivity() {
     private lateinit var wrongMediaPlayer: MediaPlayer
     var JumpedPlatfrom = mutableStateOf(6)
     var isLastPlatfrom = mutableStateOf(false)
+    var questions : List<QuestionsModel.Question> = emptyList()
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +82,7 @@ class MotionTest : ComponentActivity() {
                     modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background
                 ) {
                     val context = LocalContext.current
+                    getQuestionList(context)
                     val activity = (LocalContext.current as? Activity)
                     mMediaPlayer = MediaPlayer()
                     wrongMediaPlayer = MediaPlayer.create(context, R.raw.fail)
@@ -155,7 +161,8 @@ class MotionTest : ComponentActivity() {
                             }
                         }
 
-                        var changePos = remember {
+
+                        val queIndex: MutableState<Int> = remember {
                             mutableStateOf(0)
                         }
 
@@ -166,7 +173,7 @@ class MotionTest : ComponentActivity() {
                             points,
                             isWrongState,
                             showDialouge,
-                            stage
+                            stage, queIndex
                         )
 
                         QuestionCard(
@@ -176,7 +183,7 @@ class MotionTest : ComponentActivity() {
                             currentDeath,
                             isSkippingState,
                             stage,
-                            changePos
+                            queIndex
                         )
 
                         Row(
@@ -269,6 +276,32 @@ class MotionTest : ComponentActivity() {
     }
 
 
+    private fun getJsonDataFromAsset(context: Context, fileName: String): String? {
+        val jsonString: String
+        try {
+            jsonString = context.assets.open(fileName).bufferedReader().use { it.readText() }
+        } catch (ioException: IOException) {
+            ioException.printStackTrace()
+            return null
+        }
+        return jsonString
+    }
+
+    fun getQuestionList(context  :Context){
+        val jsonFileString = getJsonDataFromAsset( context, "file.json")
+        val gson = Gson()
+        val listPersonType = object : TypeToken<QuestionsModel>() {}.type
+
+        val ques  : QuestionsModel = gson.fromJson(jsonFileString, listPersonType)
+
+        questions = ques.questions
+
+        Log.d("TAG", "getQuestionList: ${questions.size}")
+
+    }
+
+
+
     @Composable
     fun SimpleAlertDialog(
         title: String = "Ye Ye You Won This Simple Game. SO ?",
@@ -300,7 +333,8 @@ class MotionTest : ComponentActivity() {
         points: MutableState<Int>,
         isWrongState: MutableState<Boolean>,
         showDialouge: MutableState<Int>,
-        stage: MutableState<Int>
+        stage: MutableState<Int>,
+        queIndex: MutableState<Int>
     ) {
         JumpedPlatfrom = remember {
             mutableStateOf(6)
@@ -358,56 +392,18 @@ class MotionTest : ComponentActivity() {
         ).asImageBitmap()
 
 
-        val ytarget = if (animState.value) 2f else {
-            0f
-        }
 
-        val heightarget = if (animState.value) 5f else {
-            0f
-        }
 
-        val shakeState = infiniteTransition.animateFloat(
-            initialValue = if (!animState.value) {
-                -8f
-            } else {
-                0f
-            }, targetValue = if (!animState.value) {
-                8f
-            } else {
-                0f
-            }, animationSpec = infiniteRepeatable(
 
-                animation = tween(
-                    durationMillis = 600, easing = LinearEasing
-                ), repeatMode = RepeatMode.Reverse
-            )
-        )
 
 
         val manPosition = remember { mutableStateOf(Offset(0f, 0f)) }
         var manPostionStatic = Offset(0f, 0f)
         val previousPosition = remember { mutableStateOf(Offset(0f, 0f)) }
 
-        val HightPositionState = infiniteTransition.animateFloat(
-            initialValue = 0f, targetValue = if (animState.value) 5f else {
-                0f
-            }, animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = 3000, easing = LinearOutSlowInEasing
-                )
-            )
-        )
 
-        val WidthPositionState = infiniteTransition.animateFloat(
-            initialValue = 0f, targetValue = if (animState.value) 2f else {
-                0f
-            }, animationSpec = infiniteRepeatable(
 
-                animation = tween(
-                    durationMillis = 3000, easing = LinearEasing
-                )
-            )
-        )
+
 
         val configuration = LocalConfiguration.current
 
@@ -438,23 +434,39 @@ class MotionTest : ComponentActivity() {
         val context = LocalContext.current
         val firstItem = remember { derivedStateOf { scroll.firstVisibleItemIndex } }
 
-        println("firstItem: ${firstItem.value}")
+        //println("firstItem: ${firstItem.value}")
 
         LaunchedEffect(key1 = firstItem.value) {
             if (firstItem.value + 2 == stage.value) {
                 stage.value += 1
+
+                if((questions.size - 1 ) > queIndex.value){
+                    queIndex.value += 1
+                }
+
             }
         }
-
+        val flashFinished: (Float) -> Unit = {
+           if(isWrongState.value){
+               isWrongState.value = false
+           }
+             animState.value = false
+        }
 
         val xOffset = animateFloatAsState(
-            targetValue = manPosition.value.x,
-            animationSpec = tween(durationMillis = 1200, easing = LinearEasing)
+            targetValue = if (isWrongState.value) {
+               -50f
+            }  else  { manPosition.value.x},
+            animationSpec = tween(durationMillis = 1200, easing = LinearEasing),
+            finishedListener = flashFinished
         )
 
         val yOffset = animateFloatAsState(
-            targetValue = manPosition.value.y,
-            animationSpec = tween(durationMillis = 800, easing = LinearEasing)
+
+            targetValue = if(isWrongState.value){ (-50f)}else {manPosition.value.y},
+            animationSpec = tween(durationMillis = 800, easing = LinearEasing),
+
+
         )
 
         val TWO_PI = 2 * PI
@@ -462,6 +474,8 @@ class MotionTest : ComponentActivity() {
         val getY: (Float, Float, Float) -> Float = { x, amplitude, period ->
             (sin(x * TWO_PI / period) * amplitude).toFloat()
         }
+
+
 
         var isStartAlign by remember { mutableStateOf(true) }
 
@@ -486,7 +500,7 @@ class MotionTest : ComponentActivity() {
                                             .copy(
                                                 x = if (question % 2 == 0) 100f else dipToPixels(
                                                     context, screenWidth.value
-                                                )  - 100f
+                                                ) - 100f
                                             )
                                         isStartAlign = question % 2 == 0
                                     }
@@ -542,6 +556,7 @@ class MotionTest : ComponentActivity() {
                         )
                     }
                 }
+
             }
         }
 
@@ -834,11 +849,13 @@ class MotionTest : ComponentActivity() {
         currentDeath: MutableState<Int>,
         isSkippping: MutableState<Boolean>,
         stage: MutableState<Int>,
-        changePos: MutableState<Int>,
+        queIndex: MutableState<Int>,
     ) {
+
         val context = LocalContext.current
-        mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
-        val wrongPlayer = MediaPlayer.create(context, R.raw.fail)
+
+        val item = questions[queIndex.value]
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(
@@ -853,13 +870,11 @@ class MotionTest : ComponentActivity() {
                 modifier = Modifier.padding(horizontal = 18.dp)
             ) {
                 Text(
-                    "${
-                        if (isSkippping.value) {
-                            "Question will be skipped"
-                        } else {
-                            "This is a question of the game ?"
-                        }
-                    } ${(timeData.value / 1000).toInt()}",
+                    if (isSkippping.value) {
+                        "Question will be skipped"
+                    } else {
+                        item.question
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
@@ -878,7 +893,7 @@ class MotionTest : ComponentActivity() {
                 ) {
 
                     Text(
-                        "Right",
+                        item.answers[0],
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .weight(1.0f)
@@ -891,27 +906,42 @@ class MotionTest : ComponentActivity() {
                                 enabled = !isLastPlatfrom.value
                             ) {
 
-                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
-
-                                    countDownTimer.cancel()
-                                    mMediaPlayer.start()
-
-                                    Handler(Looper.getMainLooper()).postDelayed(50) {
-
-                                        Log.d(
-                                            "POSTION",
-                                            "QuestionCard: ${changePos.value}  -> ${stage.value}"
-                                        )
-
-                                        stage.value += 1
-
-//                                        if (changePos.value == stage.value) {
-//                                            animationState.value = !animationState.value
-//                                        }
-
-
-                                    }
+                                if(currentDeath.value != 0 && !animationState.value ){
+                                    checkAnswer(
+                                        item,
+                                        0,
+                                        context,
+                                        stage,
+                                        queIndex,
+                                        isWrongState,
+                                        animationState,
+                                        currentDeath
+                                    )
                                 }
+
+
+
+//                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
+//
+//                                    countDownTimer.cancel()
+//                                    mMediaPlayer.start()
+//
+//                                    Handler(Looper.getMainLooper()).postDelayed(50) {
+//
+////                                        Log.d(
+////                                            "POSTION",
+////                                            "QuestionCard: ${changePos.value}  -> ${stage.value}"
+////                                        )
+////
+////                                        stage.value += 1
+////
+//////                                        if (changePos.value == stage.value) {
+//////                                            animationState.value = !animationState.value
+//////                                        }
+//
+//
+//                                    }
+//                                }
 
 
                             },
@@ -923,7 +953,7 @@ class MotionTest : ComponentActivity() {
 
 
                     Text(
-                        "Right",
+                        item.answers[1],
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .weight(1.0f)
@@ -935,16 +965,29 @@ class MotionTest : ComponentActivity() {
                             .clickable(
                                 enabled = !isLastPlatfrom.value
                             ) {
-                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
-                                    countDownTimer.cancel()
-                                    mMediaPlayer.start()
 
-                                    Handler(Looper.getMainLooper()).postDelayed(50) {
-
-                                        animationState.value = !animationState.value
-
-                                    }
+                                if(currentDeath.value != 0 &&!animationState.value){
+                                    checkAnswer(
+                                        item,
+                                        1,
+                                        context,
+                                        stage,
+                                        queIndex,
+                                        isWrongState,
+                                        animationState,
+                                        currentDeath
+                                    )
                                 }
+//                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
+////                                    countDownTimer.cancel()
+////                                    mMediaPlayer.start()
+//
+//                                    Handler(Looper.getMainLooper()).postDelayed(50) {
+//
+////                                        animationState.value = !animationState.value
+//
+//                                    }
+//                                }
 
                             },
                         textAlign = TextAlign.Center,
@@ -960,7 +1003,7 @@ class MotionTest : ComponentActivity() {
                 ) {
 
                     Text(
-                        "Wrong",
+                        item.answers[2],
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .weight(1.0f)
@@ -973,15 +1016,26 @@ class MotionTest : ComponentActivity() {
                                 enabled = currentDeath.value != 0
 
                             ) {
-
-                                if (!animationState.value && !isWrongState.value) {
-                                    Log.d("WRONGCALL", "QuestionCard: call ")
-                                    isWrongState.value = true
-                                    countDownTimer.cancel()
-                                    wrongPlayer.start()
-                                    currentDeath.value = currentDeath.value - 1
-
+                                if(currentDeath.value != 0 &&!animationState.value){
+                                    checkAnswer(
+                                        item,
+                                        2,
+                                        context,
+                                        stage,
+                                        queIndex,
+                                        isWrongState,
+                                        animationState,
+                                        currentDeath
+                                    )
                                 }
+//                                if (!animationState.value && !isWrongState.value) {
+//                                    Log.d("WRONGCALL", "QuestionCard: call ")
+//                                    isWrongState.value = true
+//                                    countDownTimer.cancel()
+//                                    wrongPlayer.start()
+//                                    currentDeath.value = currentDeath.value - 1
+//
+//                                }
 
 
                             },
@@ -993,7 +1047,7 @@ class MotionTest : ComponentActivity() {
 
 
                     Text(
-                        "Wrong",
+                        item.answers[3],
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .weight(1.0f)
@@ -1008,13 +1062,25 @@ class MotionTest : ComponentActivity() {
 
 
                             ) {
-                                if (!animationState.value && !isWrongState.value) {
-                                    Log.d("WRONGCALL", "QuestionCard: call ")
-                                    countDownTimer.cancel()
-                                    wrongPlayer.start()
-                                    currentDeath.value = currentDeath.value - 1
-                                    isWrongState.value = true
+                                if(currentDeath.value != 0 &&!animationState.value){
+                                    checkAnswer(
+                                        item,
+                                        3,
+                                        context,
+                                        stage,
+                                        queIndex,
+                                        isWrongState,
+                                        animationState,
+                                        currentDeath
+                                    )
                                 }
+//                                if (!animationState.value && !isWrongState.value) {
+//                                    Log.d("WRONGCALL", "QuestionCard: call ")
+//                                    countDownTimer.cancel()
+//                                    wrongPlayer.start()
+//                                    currentDeath.value = currentDeath.value - 1
+//                                    isWrongState.value = true
+//                                }
                                 // Handle the click
 
                             },
@@ -1026,6 +1092,48 @@ class MotionTest : ComponentActivity() {
                 }
             }
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun checkAnswer(
+        item: QuestionsModel.Question,
+        index: Int,
+        context: Context,
+        stage: MutableState<Int>,
+        queIndex: MutableState<Int>,
+        isWrongState: MutableState<Boolean>,
+        animationState: MutableState<Boolean>,
+        currentDeath: MutableState<Int>
+    ) {
+
+
+        animationState.value = true
+        mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
+        val wrongPlayer = MediaPlayer.create(context, R.raw.fail)
+
+        if(index == item.correctIndex){
+            // correct answer
+        mMediaPlayer.start()
+
+            stage.value  += 1
+            if((questions.size - 1 ) > queIndex.value){
+                queIndex.value += 1
+            }
+
+
+
+        }else {
+            // wrong answer
+            currentDeath.value -= 1
+            wrongPlayer.start()
+            isWrongState.value = true
+            stage.value  += 1
+
+
+        }
+
+
+
     }
 
 
@@ -1089,5 +1197,6 @@ suspend fun ScrollableState.autoScroll(
         }
     }
 }
+
 
 private const val SCROLL_DX = 24f
