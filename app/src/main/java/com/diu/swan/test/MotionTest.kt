@@ -8,6 +8,8 @@ import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.util.LayoutDirection
 import android.util.Log
@@ -20,6 +22,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -48,14 +53,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.os.postDelayed
 import androidx.core.text.layoutDirection
 import com.diu.swan.test.model.QuestionsModel
 import com.diu.swan.test.ui.theme.TestTheme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.IOException
 import java.lang.Math.PI
 import java.lang.Math.sin
@@ -69,8 +73,7 @@ class MotionTest : ComponentActivity() {
     private lateinit var wrongMediaPlayer: MediaPlayer
     var JumpedPlatfrom = mutableStateOf(6)
     var isLastPlatfrom = mutableStateOf(false)
-    var questions : List<QuestionsModel.Question> = emptyList()
-
+    var questions: List<QuestionsModel.Question> = emptyList()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -176,10 +179,14 @@ class MotionTest : ComponentActivity() {
                             stage, queIndex
                         )
 
+
+
+
+
                         QuestionCard(
                             animationState,
                             isWrongState,
-                            timeData,
+                            showDialouge,
                             currentDeath,
                             isSkippingState,
                             stage,
@@ -231,21 +238,23 @@ class MotionTest : ComponentActivity() {
                         }
 
 
-                        if (showDialouge.value == 1) {
+                        if (currentDeath.value == 0 || showDialouge.value == 13  ) {
                             countDownTimer.cancel()
-                            animationState.value = false
+                          //  animationState.value = false
                             isWrongState.value = false
                             SimpleAlertDialog(
                                 "You Failed In This Simple Game...", hide, replay
                             )
                         } else if (showDialouge.value == 2) {
-                            animationState.value = false
-                            animationState.value = false
+                          //  animationState.value = false
+                          //  animationState.value = false
                             isWrongState.value = false
-                            countDownTimer.cancel()
+
                             SimpleAlertDialog(
                                 "Ye Ye You Won This Simple Game. SO ?", hide, replay
                             )
+
+
                         }
 
 //                        Spacer(modifier = Modifier.height(30.dp))
@@ -287,12 +296,12 @@ class MotionTest : ComponentActivity() {
         return jsonString
     }
 
-    fun getQuestionList(context  :Context){
-        val jsonFileString = getJsonDataFromAsset( context, "file.json")
+    fun getQuestionList(context: Context) {
+        val jsonFileString = getJsonDataFromAsset(context, "file.json")
         val gson = Gson()
         val listPersonType = object : TypeToken<QuestionsModel>() {}.type
 
-        val ques  : QuestionsModel = gson.fromJson(jsonFileString, listPersonType)
+        val ques: QuestionsModel = gson.fromJson(jsonFileString, listPersonType)
 
         questions = ques.questions
 
@@ -301,13 +310,13 @@ class MotionTest : ComponentActivity() {
     }
 
 
-
     @Composable
     fun SimpleAlertDialog(
         title: String = "Ye Ye You Won This Simple Game. SO ?",
         onDismiss: () -> Unit,
         onConfirm: () -> Unit
     ) {
+        var isWon = title.contains("Won")
 
         AlertDialog(properties = DialogProperties(
             dismissOnBackPress = false, dismissOnClickOutside = false
@@ -315,7 +324,7 @@ class MotionTest : ComponentActivity() {
             TextButton(onClick = {
                 onConfirm()
             }) { Text(text = "Replay") }
-        }, title = { Text(text = "Oh No!!!") }, text = { Text(text = "$title") })
+        }, title = { Text(text =  if(isWon){"Congratulation"}else {"Bad Luck"}) }, text = { Text(text = "$title") })
     }
 
     @Stable
@@ -392,17 +401,9 @@ class MotionTest : ComponentActivity() {
         ).asImageBitmap()
 
 
-
-
-
-
-
         val manPosition = remember { mutableStateOf(Offset(0f, 0f)) }
         var manPostionStatic = Offset(0f, 0f)
         val previousPosition = remember { mutableStateOf(Offset(0f, 0f)) }
-
-
-
 
 
         val configuration = LocalConfiguration.current
@@ -418,6 +419,9 @@ class MotionTest : ComponentActivity() {
             coroutineScope.launch {
                 while (true) {
                     scroll.autoScroll()
+                    if(isWrongState.value){
+                        scroll.animateScrollBy(-300f)
+                    }
                 }
             }
         }
@@ -434,47 +438,76 @@ class MotionTest : ComponentActivity() {
         val context = LocalContext.current
         val firstItem = remember { derivedStateOf { scroll.firstVisibleItemIndex } }
 
+
+
         //println("firstItem: ${firstItem.value}")
 
         LaunchedEffect(key1 = firstItem.value) {
             if (firstItem.value + 2 == stage.value) {
+
+
                 stage.value += 1
 
-                if((questions.size - 1 ) > queIndex.value){
+                if ((questions.size - 1) > queIndex.value) {
                     queIndex.value += 1
+                }
+                else {
+                    scroll.stopScroll()
+                    // question ended.
+                    if(showDialouge.value  != 10 && showDialouge.value != 2 ){
+                        showDialouge.value = 13
+                    }
                 }
 
             }
         }
+
+
+
         val flashFinished: (Float) -> Unit = {
-           if(isWrongState.value){
-               isWrongState.value = false
-           }
-             animState.value = false
+            if (isWrongState.value) {
+                isWrongState.value = false
+
+            }
+            if(showDialouge.value == 10){
+                showDialouge.value = 2
+
+            }
+
+            Handler(Looper.getMainLooper()).postDelayed(300) {
+                animState.value = false
+            }
+
+            Log.d("TAG", "LoadData: anim value flase ")
         }
 
         val xOffset = animateFloatAsState(
             targetValue = if (isWrongState.value) {
-               -50f
-            }  else  { manPosition.value.x},
+                50f
+            } else {
+                manPosition.value.x
+            },
             animationSpec = tween(durationMillis = 1200, easing = LinearEasing),
             finishedListener = flashFinished
         )
 
         val yOffset = animateFloatAsState(
 
-            targetValue = if(isWrongState.value){ (-50f)}else {manPosition.value.y},
+            targetValue = if (isWrongState.value) {
+                manPosition.value.y + 1300f
+            } else {
+                manPosition.value.y
+            },
             animationSpec = tween(durationMillis = 800, easing = LinearEasing),
 
 
-        )
+            )
 
         val TWO_PI = 2 * PI
 
         val getY: (Float, Float, Float) -> Float = { x, amplitude, period ->
             (sin(x * TWO_PI / period) * amplitude).toFloat()
         }
-
 
 
         var isStartAlign by remember { mutableStateOf(true) }
@@ -845,7 +878,7 @@ class MotionTest : ComponentActivity() {
     fun QuestionCard(
         animationState: MutableState<Boolean>,
         isWrongState: MutableState<Boolean>,
-        timeData: MutableState<Long>,
+        showDialouge:  MutableState<Int>,
         currentDeath: MutableState<Int>,
         isSkippping: MutableState<Boolean>,
         stage: MutableState<Int>,
@@ -870,11 +903,8 @@ class MotionTest : ComponentActivity() {
                 modifier = Modifier.padding(horizontal = 18.dp)
             ) {
                 Text(
-                    if (isSkippping.value) {
-                        "Question will be skipped"
-                    } else {
-                        item.question
-                    },
+                    item.question + "  ${item.correctIndex+1}"
+                    ,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
@@ -883,7 +913,7 @@ class MotionTest : ComponentActivity() {
                         .padding(vertical = 8.dp),
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
-                    color = Color.Black,
+                    color = Color(0xff000000),
                     fontWeight = FontWeight.Bold
                 )
 
@@ -906,7 +936,7 @@ class MotionTest : ComponentActivity() {
                                 enabled = !isLastPlatfrom.value
                             ) {
 
-                                if(currentDeath.value != 0 && !animationState.value ){
+                                if (currentDeath.value != 0 && !animationState.value) {
                                     checkAnswer(
                                         item,
                                         0,
@@ -915,10 +945,11 @@ class MotionTest : ComponentActivity() {
                                         queIndex,
                                         isWrongState,
                                         animationState,
-                                        currentDeath
-                                    )
-                                }
+                                        currentDeath,
+                                        showDialouge,
 
+                                        )
+                                }
 
 
 //                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
@@ -966,7 +997,7 @@ class MotionTest : ComponentActivity() {
                                 enabled = !isLastPlatfrom.value
                             ) {
 
-                                if(currentDeath.value != 0 &&!animationState.value){
+                                if (currentDeath.value != 0 && !animationState.value) {
                                     checkAnswer(
                                         item,
                                         1,
@@ -975,7 +1006,8 @@ class MotionTest : ComponentActivity() {
                                         queIndex,
                                         isWrongState,
                                         animationState,
-                                        currentDeath
+                                        currentDeath,
+                                        showDialouge
                                     )
                                 }
 //                                if (!animationState.value && !isWrongState.value && !isLastPlatfrom.value && currentDeath.value != 0) {
@@ -1016,7 +1048,7 @@ class MotionTest : ComponentActivity() {
                                 enabled = currentDeath.value != 0
 
                             ) {
-                                if(currentDeath.value != 0 &&!animationState.value){
+                                if (currentDeath.value != 0 && !animationState.value) {
                                     checkAnswer(
                                         item,
                                         2,
@@ -1025,7 +1057,8 @@ class MotionTest : ComponentActivity() {
                                         queIndex,
                                         isWrongState,
                                         animationState,
-                                        currentDeath
+                                        currentDeath,
+                                        showDialouge
                                     )
                                 }
 //                                if (!animationState.value && !isWrongState.value) {
@@ -1062,7 +1095,7 @@ class MotionTest : ComponentActivity() {
 
 
                             ) {
-                                if(currentDeath.value != 0 &&!animationState.value){
+                                if (currentDeath.value != 0 && !animationState.value) {
                                     checkAnswer(
                                         item,
                                         3,
@@ -1071,7 +1104,8 @@ class MotionTest : ComponentActivity() {
                                         queIndex,
                                         isWrongState,
                                         animationState,
-                                        currentDeath
+                                        currentDeath,
+                                        showDialouge
                                     )
                                 }
 //                                if (!animationState.value && !isWrongState.value) {
@@ -1103,35 +1137,43 @@ class MotionTest : ComponentActivity() {
         queIndex: MutableState<Int>,
         isWrongState: MutableState<Boolean>,
         animationState: MutableState<Boolean>,
-        currentDeath: MutableState<Int>
+        currentDeath: MutableState<Int>,
+        showDialouge: MutableState<Int>
     ) {
 
 
         animationState.value = true
+        Log.d("anim", "checkAnswer: anime state true ")
         mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
         val wrongPlayer = MediaPlayer.create(context, R.raw.fail)
 
-        if(index == item.correctIndex){
+        if (index == item.correctIndex) {
             // correct answer
-        mMediaPlayer.start()
+            mMediaPlayer.start()
 
-            stage.value  += 1
-            if((questions.size - 1 ) > queIndex.value){
+            stage.value += 1
+
+
+            if ((questions.size - 1) > queIndex.value) {
                 queIndex.value += 1
+            }else {
+                showDialouge.value = 10
             }
 
 
 
-        }else {
+        } else {
             // wrong answer
             currentDeath.value -= 1
             wrongPlayer.start()
             isWrongState.value = true
-            stage.value  += 1
+            // stage.value  += 1
+            stage.value -= 1
+
+            Handler(Looper.getMainLooper()).postDelayed({ stage.value += 1 }, 400)
 
 
         }
-
 
 
     }
@@ -1162,25 +1204,7 @@ fun DefaultxPreview() {
 }
 
 
-class ClickHelper private constructor() {
-    private val now: Long
-        get() = System.currentTimeMillis()
-    private var lastEventTimeMs: Long = 0
-    fun clickOnce(event: () -> Unit) {
-        if (now - lastEventTimeMs >= 300L) {
-            event.invoke()
-        }
-        lastEventTimeMs = now
-    }
 
-    companion object {
-        @Volatile
-        private var instance: ClickHelper? = null
-        fun getInstance() = instance ?: synchronized(this) {
-            instance ?: ClickHelper().also { instance = it }
-        }
-    }
-}
 
 fun dipToPixels(context: Context, dipValue: Float): Float {
     val metrics: DisplayMetrics = context.resources.displayMetrics
