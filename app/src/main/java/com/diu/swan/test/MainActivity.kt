@@ -8,7 +8,10 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -33,12 +36,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             TestTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Anim()
-                }
+
             }
         }
     }
@@ -67,42 +65,42 @@ fun Anim() {
             )
 
 
-            Image(
-                painter = painterResource(id = R.drawable.islans),
-                contentDescription = "",
-                modifier =
-                Modifier
-                    .width(50.dp)
-                    .offset(
-                        y = maxHeight / 2,
-                        x = (maxWidth / 3)  - 80.dp
-                    )
-            )
+//            Image(
+//                painter = painterResource(id = R.drawable.islans),
+//                contentDescription = "",
+//                modifier =
+//                Modifier
+//                    .width(50.dp)
+//                    .offset(
+//                        y = maxHeight / 2,
+//                        x = (maxWidth / 3)  - 80.dp
+//                    )
+//            )
 
-            Image(
-                painter = painterResource(id = R.drawable.islans),
-                contentDescription = "",
-                modifier =
-                Modifier
-                    .width(50.dp)
-                    .offset(
-                        y = maxHeight / 2 - 30.dp,
-                        x = (maxWidth / 3) * 2 - 50.dp
-                    )
-            )
+//            Image(
+//                painter = painterResource(id = R.drawable.islans),
+//                contentDescription = "",
+//                modifier =
+//                Modifier
+//                    .width(50.dp)
+//                    .offset(
+//                        y = maxHeight / 2 - 30.dp,
+//                        x = (maxWidth / 3) * 2 - 50.dp
+//                    )
+//            )
 
 
-            Image(
-                painter = painterResource(id = R.drawable.islans),
-                contentDescription = "",
-                modifier =
-                Modifier
-                    .width(50.dp)
-                    .offset(
-                        y = maxHeight / 2,
-                        x = (maxWidth) - 80.dp
-                    )
-            )
+//            Image(
+//                painter = painterResource(id = R.drawable.islans),
+//                contentDescription = "",
+//                modifier =
+//                Modifier
+//                    .width(50.dp)
+//                    .offset(
+//                        y = maxHeight / 2,
+//                        x = (maxWidth) - 80.dp
+//                    )
+//            )
 
 //
 //           Row(
@@ -159,7 +157,7 @@ fun Rocket(
     )
 
     if (!isRocketEnabled) {
-        resource = painterResource(id = R.drawable.rocket_intial)
+      //  resource = painterResource(id = R.drawable.rocket_intial)
 
     } else {
         val infiniteTransition = rememberInfiniteTransition()
@@ -220,13 +218,13 @@ fun Rocket(
             intialyoffset.value =  getY(((maxWidth / 3 - (rocketSize)) + (maxWidth / 2 - (rocketSize)) * xPositionState.value).value.toInt(), ((maxWidth / 3)- 90.dp).value , fstDistance ).dp
             intialXoffset.value = (maxWidth / 3 - (rocketSize)) + (maxWidth / 2 - (rocketSize)) * xPositionState.value
         }
-
-        resource = if (engineState.value <= .5f) {
-            painterResource(id = R.drawable.rocket1)
-        } else {
-            painterResource(id = R.drawable.rocket2)
-        }
-
+//
+//        resource = if (engineState.value <= .5f) {
+//            painterResource(id = R.drawable.rocket1)
+//        } else {
+//            painterResource(id = R.drawable.rocket2)
+//        }
+//
 
 
 
@@ -248,16 +246,16 @@ fun Rocket(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        Image(
-            modifier = modifier
-                .width(rocketSize)
-                .height(rocketSize)
-                ,
-
-            painter = resource,
-            contentDescription = "A Rocket",
-            contentScale = ContentScale.FillBounds
-        )
+//        Image(
+//            modifier = modifier
+//                .width(rocketSize)
+//                .height(rocketSize)
+//                ,
+//
+//            painter = resource,
+//            contentDescription = "A Rocket",
+//            contentScale = ContentScale.FillBounds
+//        )
 
     }
 }
@@ -278,8 +276,7 @@ fun LaunchButton(
             Button(
                 onClick = onToggleAnimationState,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red,
-                    contentColor = Color.White
+
                 )
             ) {
                 Text("STOP")

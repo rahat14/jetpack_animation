@@ -3,8 +3,7 @@ package com.diu.swan.test
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +34,7 @@ fun Platform(
 
     Box(modifier = Modifier.size(100.dp)) {
         Image(
-            painter = painterResource(id = R.drawable.platfrom),
+            painter = painterResource(id = R.drawable.platfrom_12),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -43,7 +42,7 @@ fun Platform(
                 .align(Alignment.BottomCenter)
         )
 
-            //Text(text = question.toString())
+        //Text(text = question.toString())
 
         AnimatedContent(
             targetState = stage.value == question && drawNow,
@@ -55,7 +54,7 @@ fun Platform(
         ) { targetState ->
             if (targetState) {
                 Image(
-                    painter = painterResource(id = R.drawable.man),
+                    painter = painterResource(id = R.drawable.man_game),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()

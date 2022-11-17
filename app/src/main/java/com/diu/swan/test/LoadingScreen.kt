@@ -9,8 +9,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Surface
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +42,7 @@ class LoadingScreen : ComponentActivity() {
 @Composable
 fun LoaderView() {
 
-    var  progress by remember { mutableStateOf(0f) }
+    var progress by remember { mutableStateOf(0f) }
     val animatedProgress: Float by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(
@@ -52,7 +52,7 @@ fun LoaderView() {
     )
 
 
-    if(animatedProgress == 100f ){
+    if (animatedProgress == 100f) {
         val context = LocalContext.current
         val intent = Intent(context, MotionTest::class.java)
         context.startActivity(intent)

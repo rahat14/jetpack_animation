@@ -69,7 +69,78 @@
         "2/6"
       ],
       "correctIndex": 1
+    },
+    {
+      "question": "What is output for −\na = ['he', 'she', 'we']\n' '.join(a)?",
+      "answers": [
+        "['heshewe']",
+        "'heshewe'",
+        "['he she we']",
+        "'he she we'"
+      ],
+      "correctIndex": 1
+    },
+    {
+      "question": "Which of the following is false statement in python",
+      "answers": [
+        "int(144)==144",
+        "int('144')==144",
+        "int(144.0)==144",
+        "None of the above"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "question": "In the following options which are python libraries which are used for data analysis and scientific computations",
+      "answers": [
+        "Numpy",
+        "Scipy",
+        "Pandas",
+        "All The Above"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "question": "What is output of following −\nprint('any'.encode())",
+      "answers": [
+        "'any'",
+        "‘yan’",
+        "b’any’",
+        "x’any’"
+      ],
+      "correctIndex": 2
+    },
+    {
+      "question": "Which options are correct to create an empty set in Python?",
+      "answers": [
+        "{}",
+        "()",
+        "[]",
+        "set()"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "question": "Select the correct function among them which can be used to write the data to perform for a binary output?",
+      "answers": [
+        "Write",
+        "Output.binary",
+        "Dump",
+        "Binary.output"
+      ],
+      "correctIndex": 3
+    },
+    {
+      "question": "What is the output of print(2%6)",
+      "answers": [
+        "ValueError",
+        "0.33",
+        "2",
+        "2/6"
+      ],
+      "correctIndex": 1
     }
+
 
   ]
 }
