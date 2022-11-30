@@ -77,7 +77,10 @@ class MotionTest : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            TestTheme {
+            TestTheme(
+                darkTheme = false  ,
+                dynamicColor = false
+            ) {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colors.background
@@ -326,9 +329,10 @@ class MotionTest : ComponentActivity() {
                     "Congratulation"
                 } else {
                     "Bad Luck"
-                }
+                } ,
+                color = Color.Red
             )
-        }, text = { Text(text = "$title") })
+        }, text = { Text(text = "$title" , color = Color(0xff000000))  } ,)
     }
 
     @Stable
@@ -431,9 +435,9 @@ class MotionTest : ComponentActivity() {
 
                     Log.d("TAG", "LoadData: ${previousPosition.value}")
 
-                    if (previousPosition.value.y < 400f) {
+                    if (previousPosition.value.y < 800f) {
                         //  scroll.stopScroll()
-                        scroll.animateScrollBy(500f)
+                        scroll.animateScrollBy(400f)
                         scroll.autoScroll()
                     }
 
