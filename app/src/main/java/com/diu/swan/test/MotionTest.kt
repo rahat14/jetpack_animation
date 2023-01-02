@@ -47,19 +47,25 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.os.postDelayed
 import androidx.core.text.layoutDirection
 import com.diu.swan.test.model.QuestionsModel
-import com.diu.swan.test.ui.theme.TestTheme
+import com.diu.swan.test.ui.theme.Purple500
+import com.diu.swan.test.ui.theme.Purple700
+import com.diu.swan.test.ui.theme.Teal200
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.*
 
@@ -77,19 +83,19 @@ class MotionTest : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            TestTheme(
-                darkTheme = false  ,
-                dynamicColor = false
-            ) {
-                // A surface container using the 'background' color from the theme
+
+            // A surface container using the 'background' color from the theme
+            TestTheme(darkTheme = false, dynamicColor = false) {
+
                 Surface(
-                    modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colors.background
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     val context = LocalContext.current
                     getQuestionList(context)
                     val activity = (LocalContext.current as? Activity)
-                    mMediaPlayer = MediaPlayer()
+                    mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
                     wrongMediaPlayer = MediaPlayer.create(context, R.raw.fail)
+
                     val animationState = remember { mutableStateOf(false) }
                     val isWrongState = remember { mutableStateOf(false) }
                     val isSkippingState = remember { mutableStateOf(false) }
@@ -128,7 +134,8 @@ class MotionTest : ComponentActivity() {
                         ) {
                             for (i in 0..10) {
                                 item {
-                                    val image = if (i % 2 == 0) R.drawable.bg_game else R.drawable.bg_game_2
+                                    val image =
+                                        if (i % 2 == 0) R.drawable.bg_game else R.drawable.bg_game_2
                                     Image(
                                         painter = painterResource(id = image),
                                         contentDescription = null,
@@ -167,7 +174,8 @@ class MotionTest : ComponentActivity() {
                                 queIndex,
                                 modifier,
                                 scroll,
-                                isGameRunning
+                                isGameRunning,
+                                currentDeath
                             )
 
 
@@ -241,15 +249,22 @@ class MotionTest : ComponentActivity() {
                             //  animationState.value = false
                             // isWrongState.value = false
 
-                            SimpleAlertDialog(
-                                "You Failed In This Simple Game...", hide, replay
+                            CustomDialog(
+                                "You Failed In This Simple Game...",
+                                hide,
+                                replay
+
                             )
+
+//                        SimpleAlertDialog(
+//                            "You Failed In This Simple Game...", hide, replay
+//                        )
                         } else if (showDialouge.value == 2) {
                             //  animationState.value = false
                             //  animationState.value = false
                             isWrongState.value = false
 
-                            SimpleAlertDialog(
+                            CustomDialog(
                                 "Ye Ye You Won This Simple Game. SO ?", hide, replay
                             )
 
@@ -279,8 +294,14 @@ class MotionTest : ComponentActivity() {
 
                     }
                 }
+
             }
+
         }
+    }
+
+    fun  getWrongMediaPlayer(): MediaPlayer {
+        return wrongMediaPlayer;
     }
 
 
@@ -317,22 +338,131 @@ class MotionTest : ComponentActivity() {
     ) {
         var isWon = title.contains("Won")
 
-        AlertDialog(properties = DialogProperties(
-            dismissOnBackPress = false, dismissOnClickOutside = false
-        ), onDismissRequest = { onDismiss() }, confirmButton = {
-            TextButton(onClick = {
-                onConfirm()
-            }) { Text(text = "Replay") }
-        }, title = {
-            Text(
-                text = if (isWon) {
-                    "Congratulation"
-                } else {
-                    "Bad Luck"
-                } ,
-                color = Color.Red
-            )
-        }, text = { Text(text = "$title" , color = Color(0xff000000))  } ,)
+        AlertDialog(
+            properties = DialogProperties(
+                dismissOnBackPress = false, dismissOnClickOutside = false
+            ),
+            onDismissRequest = { onDismiss() },
+            confirmButton = {
+                TextButton(onClick = {
+                    onConfirm()
+                }) { Text(text = "Replay", color = Color(0xFF000000)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    finish()
+                }) { Text(text = "Go Back", color = Color(0xff000000)) }
+
+            },
+            title = {
+                Text(
+                    text = if (isWon) {
+                        "Congratulation"
+                    } else {
+                        "Bad Luck"
+                    }
+                )
+            },
+            text = { Text(text = "$title", color = Color(0xFF000000)) },
+            backgroundColor = Color.Gray,
+            contentColor = Color.Black
+        )
+    }
+
+
+    @Composable
+    fun CustomDialog(
+        title: String = "Ye Ye You Won This Simple Game. SO ?",
+        onDismiss: () -> Unit,
+        onConfirm: () -> Unit
+
+    ) {
+        val isWon = title.contains("Won")
+        val showDialog = remember { mutableStateOf(true) }
+
+
+
+        Dialog(onDismissRequest = { showDialog.value = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Magenta
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isWon) {
+                                    "Congratulation"
+                                } else {
+                                    "Bad Luck"
+                                },
+                                color = Color.White
+                            )
+
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Text(
+                            text = "$title",
+                            color = Color.White,
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily.Default,
+                                fontWeight = FontWeight.Medium
+
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Row(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
+
+                            Button(
+                                colors = ButtonDefaults.buttonColors(
+
+                                    backgroundColor = Color.Magenta
+                                ),
+                                onClick = {
+
+                                    finish()
+                                },
+                                shape = RoundedCornerShape(50.dp),
+                                modifier = Modifier
+                                    .height(50.dp)
+                            ) {
+                                Text(text = "Go Back", color = Color.White)
+
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            Button(
+                                colors = ButtonDefaults.buttonColors(
+
+                                    backgroundColor = Color.Magenta
+                                ),
+                                onClick = {
+
+                                    onConfirm()
+
+                                },
+                                shape = RoundedCornerShape(50.dp),
+                                modifier = Modifier
+                                    .height(50.dp)
+                            ) {
+                                Text(text = "Replay", color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Stable
@@ -354,7 +484,8 @@ class MotionTest : ComponentActivity() {
         queIndex: MutableState<Int>,
         modifier: Modifier,
         scroll: LazyListState,
-        isGameRunning: MutableState<Boolean>
+        isGameRunning: MutableState<Boolean>,
+        currentDeath: MutableState<Int>
     ) {
         JumpedPlatfrom = remember {
             mutableStateOf(6)
@@ -364,53 +495,14 @@ class MotionTest : ComponentActivity() {
 
         val LD = LocalDensity.current
         val infiniteTransition = rememberInfiniteTransition()
-        val index = remember {
-            mutableStateOf(5)
-        }
+
         val option = BitmapFactory.Options()
-        option.apply {
+            option.apply {
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
-        val scale by infiniteTransition.animateFloat(
-            initialValue = 0.90f, targetValue = 1f, animationSpec = infiniteRepeatable(
-                animation = tween(400), repeatMode = RepeatMode.Reverse
-            )
-        )
 
-        val imageBitmapp = BitmapFactory.decodeResource(
-            LocalContext.current.resources, R.drawable.platfrom_12, option
-        )
-
-        val coins_image = BitmapFactory.decodeResource(
-            LocalContext.current.resources, R.drawable.coins_game, option
-        )
-
-        val man_image = BitmapFactory.decodeResource(
-            LocalContext.current.resources, R.drawable.man_game, option
-        )
-
-
-        val platfrom_width = LD.run { 130.dp.toPx() }
-        val platfrom_height = LD.run { 60.dp.toPx() }
-
-        val man_width = LD.run { 50.dp.toPx() }
         val man_height = LD.run { 65.dp.toPx() }
 
-        val coins_width = LD.run { 30.dp.toPx() } * scale
-        val coins_height = LD.run { 30.dp.toPx() }
-
-        val imageBitmap = Bitmap.createScaledBitmap(
-            imageBitmapp, platfrom_width.toInt(), platfrom_height.toInt(), true
-        ).asImageBitmap()
-
-        val manBitmap = Bitmap.createScaledBitmap(
-            man_image, man_width.toInt(), man_height.toInt(), true
-        ).asImageBitmap()
-
-
-        val CoinBitmap = Bitmap.createScaledBitmap(
-            coins_image, coins_width.toInt(), coins_width.toInt(), true
-        ).asImageBitmap()
 
 
         val manPosition = remember { mutableStateOf(Offset(0f, 0f)) }
@@ -435,9 +527,10 @@ class MotionTest : ComponentActivity() {
 
                     Log.d("TAG", "LoadData: ${previousPosition.value}")
 
-                    if (previousPosition.value.y < 800f) {
-                        //  scroll.stopScroll()
-                        scroll.animateScrollBy(400f)
+                    if (previousPosition.value.y < 300f) {
+                        //  scroll.stopScroll()Is
+                        //  scroll.stopScroll()Is
+                        scroll.animateScrollBy(300f)
                         scroll.autoScroll()
                     }
 
@@ -467,6 +560,16 @@ class MotionTest : ComponentActivity() {
 
 
                 stage.value += 1
+
+
+                if (currentDeath.value > 0) {
+                    currentDeath.value -= 1
+
+                    if (currentDeath.value == 0) {
+                        isGameRunning.value = false
+                    }
+                }
+
 
                 if ((questions.size - 1) > queIndex.value) {
                     queIndex.value += 1
@@ -513,13 +616,13 @@ class MotionTest : ComponentActivity() {
         val yOffset = animateFloatAsState(
 
             targetValue = if (isWrongState.value) {
-                manPosition.value.y + LD.run { screenHeight.toPx() }
+                (manPosition.value.y + (LD.run { screenHeight.toPx() }) * 1.5).toFloat()
             } else {
                 manPosition.value.y
             },
             animationSpec = tween(
                 durationMillis = if (isWrongState.value) {
-                    2200
+                    1200
                 } else {
                     1200
                 }, easing = LinearEasing
@@ -923,6 +1026,7 @@ class MotionTest : ComponentActivity() {
             ) {
 
                 Text(
+
                     item.question + "  ${item.correctIndex + 1}",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -936,6 +1040,7 @@ class MotionTest : ComponentActivity() {
                     fontWeight = FontWeight.Bold
 
                 )
+
 
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1155,7 +1260,6 @@ class MotionTest : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun checkAnswer(
         item: QuestionsModel.Question,
         index: Int,
@@ -1173,12 +1277,13 @@ class MotionTest : ComponentActivity() {
 
         animationState.value = true
         Log.d("anim", "checkAnswer: anime state true ")
-        mMediaPlayer = MediaPlayer.create(context, R.raw.jump_s)
-        val wrongPlayer = MediaPlayer.create(context, R.raw.fail)
+
+
 
         if (index == item.correctIndex) {
             // correct answer
             mMediaPlayer.start()
+
 
             stage.value += 1
 
@@ -1193,7 +1298,10 @@ class MotionTest : ComponentActivity() {
         } else {
             // wrong answer
             currentDeath.value -= 1
-            wrongPlayer.start()
+            if(getWrongMediaPlayer().isPlaying){
+                getWrongMediaPlayer().stop()
+                getWrongMediaPlayer().start()
+            }else getWrongMediaPlayer().start()
             isWrongState.value = true
             // stage.value  += 1
 
@@ -1262,3 +1370,35 @@ suspend fun ScrollableState.autoScroll(
 
 
 private const val SCROLL_DX = 24f
+
+
+private val LightColorPalette = lightColors(
+    primary = Purple500,
+    primaryVariant = Purple700,
+    secondary = Teal200,
+    //Other default colors to override
+//    background = Color(0xFFFFFBFE),
+//    surface = Color(0xFFFFFBFE),
+//    onPrimary = Color.White,
+//    onSecondary = Color.White,
+//    onBackground = Color(0xFF1C1B1F),
+//    onSurface = Color(0xFF1C1B1F),
+
+)
+
+@Composable
+fun TestTheme(
+    darkTheme: Boolean = false,//isSystemInDarkTheme(),
+    // Dynamic color is available on Android 12+
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit
+) {
+
+    val colors = LightColorPalette
+
+    MaterialTheme(
+        colors = colors,
+        content = content
+    )
+}
+
